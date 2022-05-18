@@ -4,10 +4,6 @@ import time
 import hashlib
 import functools
 import numpy as np
-import pandas as pd
-
-import concurrent.futures
-
 
 def timer(func):
     """Print the runtime of the decorated function"""
@@ -35,7 +31,7 @@ class DataLoader():
         self.testing = []
         self.training = []
         
-        self.valid_perc = 0
+        self.valid_perc = 20
         self.test_perc = 20
     
         self.init_data()
@@ -53,8 +49,9 @@ class DataLoader():
             for file_iter, audio_file in enumerate(audio_files):
                 which = self.which_set(audio_file, self.valid_perc, self.test_perc)
                 data_file = os.path.join(dir_path, audio_file)
-                # data = np.loadtxt(data_file)
-                data = pd.read_csv(data_file, sep=" ", header = None)
+                data = np.loadtxt(data_file)
+                # print(type(data))
+                # data = pd.read_csv(data_file, sep=" ", header = None)
 
                 labeled_data = [class_idx, data]
                 split_data[which].append(labeled_data)
@@ -116,132 +113,6 @@ class DataLoader():
           result = 'training'
         return result
         
-    
-    
-    
-    # @timer
-    # def pandasData(self):
-    #     validation_x = []
-    #     validation_y = []
-    #     testing_x = []
-    #     testing_y = []
-    #     training_x = []
-    #     training_y = []
-        
-    #     split_data = {
-    #         'validation': [validation_x, validation_y],
-    #         'training': [testing_x, testing_y],
-    #         'testing': [training_x, training_y]
-    #         }
-
-    #     for class_iter, class_dir in enumerate(self.class_labels):
-    #         print(class_iter+1)
-    #         data_path = os.path.join(self.data_directory, class_dir)
-    #         audio_files = os.listdir(data_path)
-            
-    #         for file_iter, audio_file in enumerate(audio_files):
-    #             data_file = os.path.join(data_path, audio_file)
-                
-    #             which = self.which_set(audio_file, 0, 20)
-
-    #             data = pd.read_csv(data_file, sep=" ", header = None)
-    #             split_data[which][0].append(data)
-    #             split_data[which][1].append(class_iter)
-
-    #     return (training_x, training_y, testing_x, testing_y)
-    
-    #         # audio_data = np.array(audio_data)
-    #         # np.random.shuffle(audio_data)
-    #         # split_samples = int(0.85*audio_data.shape[0])
-    #         # train_data = audio_data[:split_samples]
-    #         # train_labels = audio_data[:split_samples,0]
-    #         # test_data = audio_data[split_samples:]
-    #         # test_labels = audio_data[split_samples:,0]
-    #         # return (train_data, train_labels, test_data, test_labels)
-    
-    # @timer
-    # def get_data(self):
-    #     data = []        
-    #     for class_iter, class_dir in enumerate(self.class_labels):
-    #         print(class_iter+1)
-    #         class_path = os.path.join(self.data_directory, class_dir)
-    #         class_data = self.get_class_data(class_iter, class_path)
-    #         data.append(class_data)
-    #     return np.array(data)
-                
-        
-    
-    # def get_class_data(self, index, dir_path):
-    #     val_x, val_y = [], []
-    #     tst_x, tst_y = [], []
-    #     trn_x, trn_y = [], []
-        
-    #     split_data = {
-    #         'validation':   [val_x, val_y],
-    #         'training':     [tst_x, tst_y],
-    #         'testing':      [trn_x, trn_y]
-    #         }
-        
-    #     audio_files = os.listdir(dir_path)
-    #     for file_iter, audio_file in enumerate(audio_files):
-    #         data_file = os.path.join(dir_path, audio_file)
-    #         which = self.which_set(audio_file, 0, 20)
-            
-    #         data = np.loadtxt(data_file, delimiter=' ')
-    #         # data = pd.read_csv(data_file, sep=" ", header = None)
-    #         split_data[which][0].append(data)
-    #         split_data[which][1].append(index)
-        
-        
-    #     return val_x, val_y, tst_x, tst_y, trn_x, trn_y
-    
-    
-   
-    
-    
-    # @timer
-    # def test(self):
-    #     validation = []
-    #     testing = []
-    #     training = []
-        
-    #     split_data = {
-    #         'validation': validation,
-    #         'training': testing,
-    #         'testing': training
-    #         }
-        
-    #     audio_data = []        
-            
-    #     with concurrent.futures.ThreadPoolExecutor(max_workers=self.class_number) as executor:
-    #         for class_iter, class_dir in enumerate(self.class_labels):
-    #             print(class_iter)
-    #             class_path = os.path.join(self.data_directory, class_dir)
-    #             executor.submit(self.ttt, class_iter, class_path, validation, testing, training)
-            
-    #     validation = np.array(validation, dtype=object)
-    #     testing = np.array(testing, dtype=object)
-    #     training = np.array(training, dtype=object)
-        
-    #     return validation, testing, training
-    
-    
-    # def ttt(self, label_idx, dir_path, val, test, train):
-    #     split_data = {
-    #         'validation': val,
-    #         'training': test,
-    #         'testing': train
-    #         }
-        
-    #     audio_files = os.listdir(dir_path)
-    #     for file_iter, audio_file in enumerate(audio_files):
-    #         which = self.which_set(audio_file, 0, 20)
-    #         data_file = os.path.join(dir_path, audio_file)
-    #         data = np.matrix(np.loadtxt(data_file))
-    #         labeled_data = [label_idx, data]
-    #         split_data[which].append(labeled_data)
-               
-    
     
 if __name__ == '__main__':
     

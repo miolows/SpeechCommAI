@@ -21,8 +21,8 @@ class HistoryPlot():
 
 
 class ConfMatrix():
-    def __init__(self, epoch, words_label, y, x):
-        self.epoch = epoch
+    def __init__(self, title, words_label, y, x):
+        self.title = title
         self.labels = words_label
         self.y_data = y
         self.x_data = x
@@ -36,7 +36,6 @@ class ConfMatrix():
     def draw(self, color_map, fn):
         # cmp = cm.get_cmap(color_map)
         file_name = fn + '.png'
-        img_title = 'Confusion Matrix of Epoch: ' + str(self.epoch)
         y_label = 'True class'
         x_label = 'Predicted class'
         
@@ -50,7 +49,7 @@ class ConfMatrix():
             size = max(20 - self.m_len, 1)
             self.annotate_matrix(dec, size)
         
-        plt.title(img_title)
+        plt.title(self.title)
         plt.ylabel(y_label)
         plt.xlabel(x_label)    
         
