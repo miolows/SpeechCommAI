@@ -1,12 +1,10 @@
 import numpy as np
 import os
-import sys
 
 from keras.utils import np_utils
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Flatten, Dropout, Conv2D, MaxPooling2D
 
-from plot import ConfMatrix, HistoryPlot
 from data import DataLoader
 from callbacks import TrainingCallback, PredictionCallback
 
@@ -31,29 +29,16 @@ class AudioAI():
         
         
     def load_model(self, model_path):
-        # if not os.path.exists(model_path):
-        #     print("There is no trained model in", model_path)
-        #     self.to_train()
-        # else:
-        #     self.model = load_model(model_path)
-        #     with open(os.path.join(model_path, 'labels.txt')) as file:
-        #         lines = file.readlines()
-        #         self.labels = [line.rstrip() for line in lines]
-        #     print(self.labels)
-        
-        
-        
-        
         try:
             self.model = load_model(model_path)
+            with open(os.path.join(model_path, 'labels.txt')) as file:
+                lines = file.readlines()
+                self.labels = [line.rstrip() for line in lines]
+                print(self.labels)
         except:
             print("There is no trained model in", model_path)
             self.to_train()
-            
-        
-
-       
-        
+ 
     def create_model(self):
         filters_num = 32
         kernel_s = (3,3)
@@ -105,13 +90,20 @@ class AudioAI():
                        epochs = num_epochs, 
                        callbacks = [callback])
         
+    def predict(self, data):
+        callback = PredictionCallback()
+        self.model.predict(data, train_data[1], 
+                       validation_data = valid_data,
+                       epochs = num_epochs, 
+                       callbacks = [callback])
+        
           
     
 if __name__ == '__main__':
     ai = AudioAI(35, 'Results')
-    validation, testing, training = ai.load_data("mfcc_Dataset")
-    #hard coded num of epochs!!!
-    ai.train(10, ai.prep_data(training), ai.prep_data(validation), ai.models_dir)
+    # validation, testing, training = ai.load_data("mfcc_Dataset")
+    # #hard coded num of epochs!!!
+    # ai.train(10, ai.prep_data(training), ai.prep_data(validation), ai.models_dir)
         
 # data_dir = "Dataset"
 # prep_data_dir = "mfcc_Dataset"
