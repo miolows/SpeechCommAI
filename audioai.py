@@ -7,7 +7,21 @@ from keras.layers import Dense, Flatten, Dropout, Conv2D, MaxPooling2D
 
 from data import DataLoader
 from callbacks import TrainingCallback, PredictionCallback
+from record import AudioRecord
+import time
 
+#-->
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Dense
+from tensorflow.keras import backend as K
+from tensorflow.keras.regularizers import l2
+
+#<--
 
 class AudioAI():
     def __init__(self, num_classes, models_dir, to_train=False):
@@ -22,10 +36,12 @@ class AudioAI():
         
         
     def to_train(self):
-        self.create_model()
+        # self.create_model()
+        self.build(44, 44, 1, self.num_classes, l2(0.0005))
+
         validation, testing, training = self.load_data("mfcc_Dataset")
         #hard coded num of epochs!!!
-        self.train(10, self.prep_data(training), self.prep_data(validation), self.models_dir)
+        self.train(40, self.prep_data(training), self.prep_data(validation), self.models_dir)
         
         
     def load_model(self, model_path):
@@ -34,7 +50,6 @@ class AudioAI():
             with open(os.path.join(model_path, 'labels.txt')) as file:
                 lines = file.readlines()
                 self.labels = [line.rstrip() for line in lines]
-                print(self.labels)
         except:
             print("There is no trained model in", model_path)
             self.to_train()
@@ -43,33 +58,100 @@ class AudioAI():
         filters_num = 32
         kernel_s = (3,3)
         input_s = (44,44,1)
-        hidden_nodes = 300
+        hidden_nodes = 500
 
         first_activ_func = 'relu'
         hidden_activ_func = 'relu'
         last_activ_func = 'softmax'
         
-        first_conv_layer = Conv2D(filters = filters_num,
-                                  kernel_size = kernel_s,
-                                  activation = first_activ_func,
-                                  input_shape = input_s)
-        hidden_layer = Dense(hidden_nodes, activation = hidden_activ_func)
-        last_layer = Dense(self.num_classes, activation = last_activ_func)
+        # first_conv_layer = Conv2D(filters = filters_num,
+        #                           kernel_size = kernel_s,
+        #                           activation = first_activ_func,
+        #                           input_shape = input_s)
+        # hidden_layer = Dense(hidden_nodes, activation = hidden_activ_func)
+        # last_layer = Dense(self.num_classes, activation = last_activ_func)
+        
+        # self.model = Sequential()
+        # self.model.add(first_conv_layer)
+        # self.model.add(MaxPooling2D(pool_size=(2,2)))
+        # self.model.add(Flatten())
+        # self.model.add(Dropout(0.4))
+        # self.model.add(hidden_layer)
+        # self.model.add(Dropout(0.4))
+        # self.model.add(last_layer)
+        
+        # self.model.compile(loss='categorical_crossentropy', 
+        #                    optimizer="adam",
+        #                    metrics=['accuracy'])
+        # self.model.summary()
+        
+#-->        
+    def build(self, width, height, depth, classes, reg, init="he_normal"):
+        # initialize the model along with the input shape to be
+		# "channels last" and the channels dimension itself
+        self.model = Sequential()
+        inputShape = (height, width, depth)
+        chanDim = -1
+		# if we are using "channels first", update the input shape
+		# and channels dimension
+        if K.image_data_format() == "channels_first":
+            inputShape = (depth, height, width)
+            chanDim = 1
+        
         
         self.model = Sequential()
-        self.model.add(first_conv_layer)
-        self.model.add(MaxPooling2D(pool_size=(2,2)))
+        self.model.add(Conv2D(16, (7, 7), strides=(2, 2), padding="valid",
+			kernel_initializer=init, kernel_regularizer=reg,
+			input_shape=inputShape))
+		# here we stack two CONV layers on top of each other where
+		# each layerswill learn a total of 32 (3x3) filters
+        self.model.add(Conv2D(32, (3, 3), padding="same",
+                              kernel_initializer=init, kernel_regularizer=reg))
+        self.model.add(Activation("relu"))
+        self.model.add(BatchNormalization(axis=chanDim))
+        self.model.add(Conv2D(32, (3, 3), strides=(2, 2), padding="same",
+                              kernel_initializer=init, kernel_regularizer=reg))
+        self.model.add(Activation("relu"))
+        self.model.add(BatchNormalization(axis=chanDim))
+        self.model.add(Dropout(0.25))
+        
+        # stack two more CONV layers, keeping the size of each filter
+		# as 3x3 but increasing to 64 total learned filters
+        self.model.add(Conv2D(64, (3, 3), padding="same",
+			kernel_initializer=init, kernel_regularizer=reg))
+        self.model.add(Activation("relu"))
+        self.model.add(BatchNormalization(axis=chanDim))
+        self.model.add(Conv2D(64, (3, 3), strides=(2, 2), padding="same",
+			kernel_initializer=init, kernel_regularizer=reg))
+        self.model.add(Activation("relu"))
+        self.model.add(BatchNormalization(axis=chanDim))
+        self.model.add(Dropout(0.25))
+		# increase the number of filters again, this time to 128
+        self.model.add(Conv2D(128, (3, 3), padding="same",
+			kernel_initializer=init, kernel_regularizer=reg))
+        self.model.add(Activation("relu"))
+        self.model.add(BatchNormalization(axis=chanDim))
+        self.model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same",
+			kernel_initializer=init, kernel_regularizer=reg))
+        self.model.add(Activation("relu"))
+        self.model.add(BatchNormalization(axis=chanDim))
+        self.model.add(Dropout(0.25))
+        
+        # y-connected layer
         self.model.add(Flatten())
-        self.model.add(Dropout(0.4))
-        self.model.add(hidden_layer)
-        self.model.add(Dropout(0.4))
-        self.model.add(last_layer)
-        
+        self.model.add(Dense(512, kernel_initializer=init))
+        self.model.add(Activation("relu"))
+        self.model.add(BatchNormalization())
+        self.model.add(Dropout(0.5))
+        #max classifier
+        self.model.add(Dense(classes))
+        self.model.add(Activation("softmax"))
         self.model.compile(loss='categorical_crossentropy', 
-                           optimizer="adam",
-                           metrics=['accuracy'])
+                            optimizer="adam",
+                            metrics=['accuracy'])
         self.model.summary()
-        
+#<--
+
 
     def load_data(self, data_dir):
         dl = DataLoader(self.num_classes, data_dir)
@@ -91,16 +173,36 @@ class AudioAI():
                        callbacks = [callback])
         
     def predict(self, data):
-        callback = PredictionCallback()
-        self.model.predict(data, train_data[1], 
-                       validation_data = valid_data,
-                       epochs = num_epochs, 
-                       callbacks = [callback])
-        
+        x_data =  np.expand_dims(data, axis=0)
+        x_data =  np.expand_dims(x_data, axis=-1)
+        predict = self.model.predict(x_data)
+        y_pred = np.argmax(predict, axis=-1)[0]
+        y_pred_perc = np.squeeze(predict)[y_pred]
+        # print(predict)
+        # print(y_pred_perc)
+        # list(map(lambda x: self.labels))
+        if y_pred_perc<0.3:
+            print("I don't know what you said. Maybe ", self.labels[y_pred])
+        elif y_pred_perc>0.3 and y_pred_perc<0.6: 
+            print("I bet that you said ", self.labels[y_pred])
+        elif y_pred_perc>0.6 and y_pred_perc<0.8: 
+            print("I'm pretty sure you said ", self.labels[y_pred])
+        else:
+            print("You said ", self.labels[y_pred])
+
+
           
-    
 if __name__ == '__main__':
-    ai = AudioAI(35, 'Results')
+    ai = AudioAI(20, 'Results')
+    print(ai.labels)
+    rec = AudioRecord()
+    for i in range(1,10):
+        
+        rec.record()
+        audio_data = rec.get_live_rec_data()
+        ai.predict(audio_data)
+        time.sleep(3.0)
+    
     # validation, testing, training = ai.load_data("mfcc_Dataset")
     # #hard coded num of epochs!!!
     # ai.train(10, ai.prep_data(training), ai.prep_data(validation), ai.models_dir)

@@ -14,6 +14,7 @@ class TrainingCallback(Callback):
         self.labels = labels 
         self.train_dir = os.path.join(self.result_dir, "c{}".format(len(self.labels)))
         self.learning_frames = []
+        self.valid_acc = 0
         
     def on_train_begin(self, logs=None):
         if not os.path.exists(self.result_dir):
@@ -35,11 +36,20 @@ class TrainingCallback(Callback):
         plot_title = 'Confusion Matrix of Epoch: ' + str(epoch)
         cm = ConfMatrix(plot_title, self.labels, y_true, y_pred)
         cm.draw('CMRmap', 'aaa')
+        
+        epoch_acc = max(self.valid_acc, logs['val_accuracy'])
+        if self.valid_acc == epoch_acc:
+            pass
+        else:
+            self.valid_acc = epoch_acc
+            print("Change of valid_acc: ", epoch_acc)
+            self.model.save(self.train_dir)
+            
         # self.learning_frames.append(cm.fig)
         
         
     def on_train_end(self, logs=None):
-        self.model.save(self.train_dir)
+        # self.model.save(self.train_dir)
         print(logs)
         
         # # Plot and save training & validation accuracy values
