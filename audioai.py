@@ -86,7 +86,7 @@ class AudioAI():
         # self.model.summary()
         
 #-->        
-    def build(self, width, height, depth, classes, reg, init="he_normal"):
+    def build(self, height, width, depth, classes, reg, init="he_normal"):
         # initialize the model along with the input shape to be
 		# "channels last" and the channels dimension itself
         self.model = Sequential()
@@ -99,7 +99,7 @@ class AudioAI():
             chanDim = 1
         
         
-        self.model = Sequential()
+        # self.model = Sequential()
         self.model.add(Conv2D(16, (7, 7), strides=(2, 2), padding="valid",
 			kernel_initializer=init, kernel_regularizer=reg,
 			input_shape=inputShape))
@@ -196,7 +196,7 @@ if __name__ == '__main__':
     ai = AudioAI(20, 'Results')
     print(ai.labels)
     rec = AudioRecord()
-    for i in range(1,10):
+    for i in range(10):
         
         rec.record()
         audio_data = rec.get_live_rec_data()
