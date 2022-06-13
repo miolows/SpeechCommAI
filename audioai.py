@@ -5,7 +5,7 @@ from keras.utils import np_utils
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Flatten, Dropout, Conv2D, MaxPooling2D
 
-from data import DataLoader
+from data import DataLoader, timer
 from callbacks import TrainingCallback, PredictionCallback
 from record import AudioRecord
 import time
@@ -152,7 +152,7 @@ class AudioAI():
         self.model.summary()
 #<--
 
-
+    @timer
     def load_data(self, data_dir):
         dl = DataLoader(self.num_classes, data_dir)
         self.labels = dl.class_labels
@@ -193,7 +193,7 @@ class AudioAI():
 
           
 if __name__ == '__main__':
-    ai = AudioAI(20, 'Results')
+    ai = AudioAI(35, 'Results', True)
     print(ai.labels)
     rec = AudioRecord()
     for i in range(10):

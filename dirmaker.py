@@ -16,7 +16,7 @@ class DirMaker():
 
     def make_dir(self, dirpath):
         if not os.path.exists(dirpath):
-            os.mkdir(dirpath) 
+            os.mkdir(dirpath)
 
 
     def make_label_dir(self, label):

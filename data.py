@@ -73,7 +73,7 @@ class DataLoader():
         else:
             return [], []
     
-    
+
     def get_data(self):
         val_data = self.split_labels(self.validation)
         test_data = self.split_labels(self.testing)
