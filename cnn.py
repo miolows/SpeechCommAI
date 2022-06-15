@@ -1,5 +1,5 @@
 from tensorflow.keras.layers import BatchNormalization, Conv2D, Activation, Flatten, Dropout, Dense
-from tensorflow.keras.models import Sequential, load_model 
+from tensorflow.keras import models
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras import backend as K
 from keras.utils import np_utils
@@ -7,57 +7,73 @@ import numpy as np
 import time
 import os
 
-from prep import load_data
+import prep
+from config import Configurator
 from callbacks import TrainingCallback, PredictionCallback
 from record import AudioRecord
 
 class AudioAI():
-    def __init__(self, num_classes, models_dir, to_train=False):
-        self.models_dir = models_dir
-        self.num_classes = num_classes
-        if to_train:
-            self.to_train(num_classes, 40)
-            
+    def __init__(self, config, collection, train=False):
+        self.config = config
+        self.collection = collection
+        
+        #get essential data from config file
+        model_dir = self.config.get('directories', 'Saved models')
+        self.model_subdir = os.path.join(model_dir, collection)
+        self.sample_shape = self.config.get('audio', 'sample shape')
+        self.class_names = self.config.get('data', collection)
+        self.class_num = len(self.class_names)
+        
+        if train:
+            self.to_train()
         else:
-            model_subdir = os.path.join(models_dir, "c{}".format(self.num_classes))
-            self.load_model(model_subdir)
+            self.load_model(self.model_subdir)
         
-        
-    def to_train(self, classes_n, epochs_n):
-        # self.create_model()
-        self.model = self.build(13, 44, 1, classes_n, l2(0.0005))
-        
-        self.model.summary()
-        datadir = 'prep_dataset'
-        self.labels = self.get_names(datadir, classes_n)
-        print(self.labels)
-        validation, testing, training = load_data(datadir, self.labels)
-        
-        self.train(epochs_n, self.prep_data(training), self.prep_data(validation), self.models_dir)
-        
-        
+    
     def load_model(self, model_path):
         try:
-            self.model = load_model(model_path)
-            with open(os.path.join(model_path, 'labels.txt')) as file:
-                lines = file.readlines()
-                self.labels = [line.rstrip() for line in lines]
+            self.model = models.load_model(model_path)
         except:
             print("There is no trained model in", model_path)
             self.to_train()
-
     
-    def build(self, height, width, depth, classes, reg, init="he_normal"):
+    
+    def to_train(self):
+        data_dir = self.config.get('directories', 'Preprocessed data')
+        epoch_num = self.config.get('ai', 'epochs')
+        self.model = self.build(l2(0.0005))
+        self.model.summary()
+
+        validation, testing, training = prep.load_data(data_dir, self.class_names)
+        
+        self.train(epoch_num, self.prep_data(training), self.prep_data(validation))
+
+
+    def prep_data(self, data):
+        x = np.expand_dims(np.concatenate(data['mfcc']), axis=-1)
+        y = np_utils.to_categorical(np.concatenate(data['labels']), num_classes=self.class_num)
+        return x,y
+    
+    
+    def train(self, epoch_num, train_data, valid_data):
+        callback = TrainingCallback(self.model_subdir, self.class_names, valid_data)
+        self.model.fit(train_data[0], train_data[1], 
+                       validation_data = valid_data,
+                       epochs = epoch_num, 
+                       callbacks = [callback])
+
+
+    def build(self, reg, init="he_normal"):
         # initialize the model along with the input shape to be
 		# "channels last" and the channels dimension itself
-        model = Sequential()
-        inputShape = (height, width, depth)
+        model = models.Sequential()
+        inputShape = self.sample_shape
         chanDim = -1
-		# if we are using "channels first", update the input shape
-		# and channels dimension
-        if K.image_data_format() == "channels_first":
-            inputShape = (depth, height, width)
-            chanDim = 1
+# 		# if we are using "channels first", update the input shape
+# 		# and channels dimension
+#         if K.image_data_format() == "channels_first":
+#             inputShape = (depth, height, width)
+#             chanDim = 1
         
         model.add(Conv2D(16, (7, 7), strides=(2, 2), padding="valid",
 			kernel_initializer=init, kernel_regularizer=reg,
@@ -103,32 +119,14 @@ class AudioAI():
         model.add(BatchNormalization())
         model.add(Dropout(0.5))
         #max classifier
-        model.add(Dense(classes))
+        model.add(Dense(self.class_num))
         model.add(Activation("softmax"))
         model.compile(loss='categorical_crossentropy', 
                             optimizer="adam",
                             metrics=['accuracy'])
-
         return model
 
-    def get_names(self, datadir, num):
-        names = os.listdir(datadir)[:num]
-        return names
 
-    def prep_data(self, data):
-        x = np.expand_dims(np.concatenate(data['mfcc']), axis=-1)
-        y = np_utils.to_categorical(np.concatenate(data['labels']), num_classes=self.num_classes)
-
-        return x,y
-
-        
-    def train(self, num_epochs, train_data, valid_data, result_dir):
-        callback = TrainingCallback(result_dir, self.labels, valid_data)
-        self.model.fit(train_data[0], train_data[1], 
-                       validation_data = valid_data,
-                       epochs = num_epochs, 
-                       callbacks = [callback])
-        
     def predict(self, data):
         x_data =  np.expand_dims(data, axis=0)
         x_data =  np.expand_dims(x_data, axis=-1)
@@ -150,12 +148,14 @@ class AudioAI():
 
           
 if __name__ == '__main__':
-    ai = AudioAI(2, 'Results', True)
-    print(ai.labels)
-    rec = AudioRecord()
-    for i in range(10):
+    config = Configurator()
+    data_collection = 'first 2'
+    ai = AudioAI(config, data_collection, True)
+
+    # rec = AudioRecord()
+    # for i in range(10):
         
-        rec.record()
-        audio_data = rec.get_live_rec_data()
-        ai.predict(audio_data)
-        time.sleep(3.0)
+    #     rec.record()
+    #     audio_data = rec.get_live_rec_data()
+    #     ai.predict(audio_data)
+    #     time.sleep(3.0)

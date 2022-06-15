@@ -25,7 +25,7 @@ class AudioRecord(object):
                         input=True,
                         frames_per_buffer=self.CHUNK)
         
-        print("* recording")
+        print("*recording")
 
         frames = []
 
@@ -33,7 +33,7 @@ class AudioRecord(object):
             data = stream.read(self.CHUNK)
             frames.append(data)
 
-        print("* done recording")
+        print("*done recording")
         stream.stop_stream()
         stream.close()
         p.terminate()
@@ -57,7 +57,6 @@ class AudioRecord(object):
         samples_num = split.shape[0]
         # fig, ax = plt.subplots(nrows=(samples_num+1), sharex=True)
         # librosa.display.waveshow(y, sr=self.RATE, ax=ax[0])
-
 
         for s in range(samples_num):
             s_start = split[s,0]

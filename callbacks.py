@@ -12,18 +12,15 @@ class TrainingCallback(Callback):
         self.result_dir = result_dir
         self.validation_data = val_data
         self.labels = labels 
-        self.train_dir = os.path.join(self.result_dir, "c{}".format(len(self.labels)))
         self.learning_frames = []
         self.valid_acc = 0
+        
         
     def on_train_begin(self, logs=None):
         if not os.path.exists(self.result_dir):
             os.mkdir(self.result_dir)      
-        
-        if not os.path.exists(self.train_dir):
-            os.mkdir(self.train_dir)
-            
-        with open(os.path.join(self.train_dir, 'labels.txt'), 'w') as fp:
+                    
+        with open(os.path.join(self.result_dir, 'labels.txt'), 'w') as fp:
             for label in self.labels:
                 fp.write("%s\n" % label)
         
@@ -43,13 +40,13 @@ class TrainingCallback(Callback):
         else:
             self.valid_acc = epoch_acc
             print("Change of valid_acc: ", epoch_acc)
-            self.model.save(self.train_dir)
+            self.model.save(self.result_dir)
             
         # self.learning_frames.append(cm.fig)
         
         
     def on_train_end(self, logs=None):
-        # self.model.save(self.train_dir)
+        # self.model.save(self.result_dir)
         print(logs)
         
         # # Plot and save training & validation accuracy values
