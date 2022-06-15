@@ -21,11 +21,7 @@ class Configurator():
                                   'Saved models': 'Models',
                                   'Temporary files': 'Temp'}
         
-        c['preprocessing'] = {# output data file names
-                              'validation': 'validation_data.json',
-                              'testing': 'testing_data.json',
-                              'training': 'training_data.json',
-                              # dataset splitting
+        c['preprocessing'] = {# dataset splitting
                               'validation percentage': 15,
                               'testing percentage': 15,
                               'sample max': 2**27 - 1,
@@ -34,7 +30,7 @@ class Configurator():
         
         c['audio'] = {# audio file processing
                       'rate': 22050,
-                      'sample duration': 1,
+                      'duration': 1,
                       # audio processing
                       'mfcc coefficients': 13,
                       'sample shape': (13, 44, 1)}
@@ -75,6 +71,17 @@ class Configurator():
         c.read(self.config_file)
         return c
     
+
+    # def get(self, key):
+    #     try:
+    #         data = self.config[key]
+    #         return data
+            
+    #     except KeyError:
+    #         print("Error!")
+    #         print("There is no '{}' section in the config file.".format(key))
+    #         sys.exit()
+        
 
     def get(self, key, subkey):
         try:
