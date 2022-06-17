@@ -65,8 +65,8 @@ class AudioRecord(object):
         split = librosa.effects.split(y)
         samples_num = split.shape[0]
         ##########
-        fig, ax = plt.subplots(nrows=(samples_num+1), sharex=True)
-        librosa.display.waveshow(y, sr=self.rate, ax=ax[0])
+        # fig, ax = plt.subplots(nrows=(samples_num+1), sharex=True)
+        # librosa.display.waveshow(y, sr=self.rate, ax=ax[0])
         ##########
         for s in range(samples_num):
             s_start = split[s,0]
@@ -74,7 +74,7 @@ class AudioRecord(object):
             sample = y[s_start:s_stop]
             mfcc = get_mfcc(sample, self.rate, self.prep_duration, self.mfcc_n)
             ##########
-            librosa.display.waveshow(sample, sr=self.rate, ax=ax[s+1])
+            # librosa.display.waveshow(sample, sr=self.rate, ax=ax[s+1])
             ##########
             #in fact it return mfcc of the first audio signal (s=0). It'll be changed in the future
             return mfcc
