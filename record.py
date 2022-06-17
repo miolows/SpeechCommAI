@@ -55,9 +55,12 @@ class AudioRecord(object):
         wf.writeframes(b''.join(frames))
         wf.close()
 
+    def clear_temp(self):
+        os.remove(self.file_path)
 
     def get_live_rec_data(self):
         y, _ = librosa.load(self.file_path, sr=self.rate)
+        self.clear_temp()
         #Split an audio signal into non-silent intervals
         split = librosa.effects.split(y)
         samples_num = split.shape[0]

@@ -150,7 +150,7 @@ class AudioAI():
 if __name__ == '__main__':
     config = Configurator()
     data_collection = 'all'
-    ai = AudioAI(config, data_collection, True)
+    ai = AudioAI(config, data_collection)
 
     rec = AudioRecord(config)
     for i in range(10):
