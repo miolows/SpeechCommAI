@@ -137,19 +137,19 @@ class AudioAI():
         # print(y_pred_perc)
         # list(map(lambda x: self.labels))
         if y_pred_perc<0.3:
-            print("I don't know what you said. Maybe ", self.labels[y_pred])
+            print("I don't know what you said. Maybe ", self.class_names[y_pred])
         elif y_pred_perc>0.3 and y_pred_perc<0.6: 
-            print("I bet that you said ", self.labels[y_pred])
+            print("I bet that you said ", self.class_names[y_pred])
         elif y_pred_perc>0.6 and y_pred_perc<0.8: 
-            print("I'm pretty sure you said ", self.labels[y_pred])
+            print("I'm pretty sure you said ", self.class_names[y_pred])
         else:
-            print("You said ", self.labels[y_pred])
+            print("You said ", self.class_names[y_pred])
 
 
           
 if __name__ == '__main__':
     config = Configurator()
-    data_collection = 'first 2'
+    data_collection = 'all'
     ai = AudioAI(config, data_collection, True)
 
     rec = AudioRecord(config)

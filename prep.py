@@ -40,7 +40,6 @@ class AIAudioData:
     mfcc: []
 
 
-
 ''' *** Audio processing *** '''
 
 def get_mfcc(audio, rate, duration, n_mfcc):
@@ -49,31 +48,27 @@ def get_mfcc(audio, rate, duration, n_mfcc):
     mfcc = librosa.feature.mfcc(y=audio, sr=rate, n_mfcc=n_mfcc)
     return mfcc
 
-
 def file_mfcc(file, rate, duration, n_mfcc):
     audio, _ = librosa.load(file, sr=rate)
     mfcc = get_mfcc(audio, rate, duration, n_mfcc)
     return mfcc
 
-
 def adjust_audio(y, sample_rate, output_duration):
     input_duration = len(y)/sample_rate
-    r = input_duration/output_duration
-    y_stretch = librosa.effects.time_stretch(y, rate=r)
-    return y_stretch
-
+    if input_duration == output_duration:
+        return y
+    else:
+        r = input_duration/output_duration
+        y_adjusted = librosa.effects.time_stretch(y, rate=r)
+        return y_adjusted
 
 def get_delta_mfcc(mfcc, d_order):
     delta_mfcc = librosa.feature.delta(mfcc, order=d_order)
     return delta_mfcc
 
-
 def norm(matrix):
     xmax, xmin = matrix.max(), matrix.min()
     return (matrix - xmin)/(xmax - xmin)
-
-
-
 
 
 ''' *** Data pre-processing *** '''
@@ -106,7 +101,7 @@ def save_tofile(dirpath, filename, data):
 
 
 def prep_class(prep_dir, class_path, audio_files,  max_per_class, validation_percentage, 
-               testing_percentage,sample_rate, n_mfcc):
+               testing_percentage,sample_rate, audio_dur, n_mfcc):
     class_name = os.path.basename(class_path)
     class_prep_dir = os.path.join(prep_dir, class_name)
     print("Processing {}".format(class_name))
@@ -121,10 +116,9 @@ def prep_class(prep_dir, class_path, audio_files,  max_per_class, validation_per
                   
     for audio_file in tqdm(audio_files):
         audiofile_path = os.path.join(class_path, audio_file)
-        mfcc = file_mfcc(audiofile_path, sample_rate, n_mfcc)
+        mfcc = file_mfcc(audiofile_path, sample_rate, audio_dur, n_mfcc)
         which = which_set(audio_file, max_per_class, validation_percentage, testing_percentage)
         split_data[which].mfcc.append(mfcc.tolist())
-
 
     valid_fname, test_fname, train_fname = "validation.json", "testing.json", "training.json"
             
@@ -133,11 +127,11 @@ def prep_class(prep_dir, class_path, audio_files,  max_per_class, validation_per
     save_tofile(class_prep_dir, train_fname, training)
         
         
-# def prep_dataset(dataset, prep_dir, sample_rate=22050, n_mfcc=13):
 def prep_dataset(config):
     dataset = config.get('directories', 'Dataset')
     prep_dir = config.get('directories', 'Preprocessed data')
     sample_rate = config.get('audio', 'rate')
+    duration = config.get('audio', 'prep duration')
     n_mfcc = config.get('audio', 'mfcc coefficients')
     
     s_max = config.get('preprocessing', 'sample max')
@@ -147,7 +141,7 @@ def prep_dataset(config):
     for class_path, subdirs, audio_files in os.walk(dataset):
         curr_dir = os.path.basename(class_path)
         if curr_dir != dataset:
-            prep_class(prep_dir, class_path, audio_files, s_max, v_perc, t_perc, sample_rate, n_mfcc)
+            prep_class(prep_dir, class_path, audio_files, s_max, v_perc, t_perc, sample_rate, duration, n_mfcc)
 
 
 ''' *** Data loading from JSON files *** '''
@@ -179,7 +173,6 @@ def load_data(data_dir, labels):
 
     return (validation, testing, training)
         
-
 
 
 if __name__ == "__main__":
