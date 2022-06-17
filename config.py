@@ -30,7 +30,8 @@ class Configurator():
         
         c['audio'] = {# audio file processing
                       'rate': 22050,
-                      'duration': 1,
+                      'record duration': 2,
+                      'prep duration': 1,
                       # audio processing
                       'mfcc coefficients': 13,
                       'sample shape': (13, 44, 1)}

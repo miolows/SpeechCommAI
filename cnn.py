@@ -152,10 +152,10 @@ if __name__ == '__main__':
     data_collection = 'first 2'
     ai = AudioAI(config, data_collection, True)
 
-    # rec = AudioRecord()
-    # for i in range(10):
+    rec = AudioRecord(config)
+    for i in range(10):
         
-    #     rec.record()
-    #     audio_data = rec.get_live_rec_data()
-    #     ai.predict(audio_data)
-    #     time.sleep(3.0)
+        rec.record()
+        audio_data = rec.get_live_rec_data()
+        ai.predict(audio_data)
+        time.sleep(3.0)

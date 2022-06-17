@@ -1,5 +1,6 @@
 import numpy as np
 import librosa
+from librosa.effects import time_stretch
 import os
 import json
 from dataclasses import dataclass, asdict
@@ -40,16 +41,26 @@ class AIAudioData:
 
 
 
-''' *** Audio preprocessing *** '''
-def get_mfcc(audio_file, sample_rate, n_mfcc):
-    y, _ = librosa.load(audio_file, sr=sample_rate)
-    #if the audio sample is shorter than 1s, fill it up with 0
-    y_reshaped = np.zeros(sample_rate)
-    y_reshaped[:len(y)] = y
-    
-    # Compute MFCC features from the raw signal
-    mfcc = librosa.feature.mfcc(y=y_reshaped, sr=sample_rate, n_mfcc=n_mfcc)
+''' *** Audio processing *** '''
+
+def get_mfcc(audio, rate, duration, n_mfcc):
+    #ensure that the audio sample has the specified duration. Otherwise, compress or stretch the signal.
+    audio = adjust_audio(audio, rate, duration)
+    mfcc = librosa.feature.mfcc(y=audio, sr=rate, n_mfcc=n_mfcc)
     return mfcc
+
+
+def file_mfcc(file, rate, duration, n_mfcc):
+    audio, _ = librosa.load(file, sr=rate)
+    mfcc = get_mfcc(audio, rate, duration, n_mfcc)
+    return mfcc
+
+
+def adjust_audio(y, sample_rate, output_duration):
+    input_duration = len(y)/sample_rate
+    r = input_duration/output_duration
+    y_stretch = librosa.effects.time_stretch(y, rate=r)
+    return y_stretch
 
 
 def get_delta_mfcc(mfcc, d_order):
@@ -60,6 +71,8 @@ def get_delta_mfcc(mfcc, d_order):
 def norm(matrix):
     xmax, xmin = matrix.max(), matrix.min()
     return (matrix - xmin)/(xmax - xmin)
+
+
 
 
 
@@ -108,7 +121,7 @@ def prep_class(prep_dir, class_path, audio_files,  max_per_class, validation_per
                   
     for audio_file in tqdm(audio_files):
         audiofile_path = os.path.join(class_path, audio_file)
-        mfcc = get_mfcc(audiofile_path, sample_rate, n_mfcc)
+        mfcc = file_mfcc(audiofile_path, sample_rate, n_mfcc)
         which = which_set(audio_file, max_per_class, validation_percentage, testing_percentage)
         split_data[which].mfcc.append(mfcc.tolist())
 

@@ -5,92 +5,82 @@ import librosa
 import librosa.display
 import wave
 import matplotlib.pyplot as plt
+import os
 
+from prep import get_mfcc
+from config import Configurator
 
 class AudioRecord(object):
-    def __init__(self):
-        self.FORMAT = pyaudio.paInt16
-        self.RATE = 22050
-        self.CHUNK = 1024
-        self.RECORD_SECONDS = 2
-        self.CHANNELS = 2
-        self.WAVE_OUTPUT_FILENAME = "output.wav"
+    def __init__(self, config):
+        self.format = pyaudio.paInt16
+        self.chunk = 1024
+        self.channels = 2        
+        self.rate = config.get('audio', 'rate')
+        self.rec_duration = config.get('audio', 'record duration')
+        self.prep_duration = config.get('audio', 'prep duration')
+        self.mfcc_n = config.get('audio', 'mfcc coefficients')
+
+        self.output = config.get('directories', 'Temporary files')
+        self.rec_name = 'rec.wav'
+        self.file_path = os.path.join(self.output, self.rec_name)
 
 
     def record(self):
         p = pyaudio.PyAudio()
-        stream = p.open(format=self.FORMAT,
-                        channels=self.CHANNELS,
-                        rate=self.RATE,
+        stream = p.open(format=self.format,
+                        channels=self.channels,
+                        rate=self.rate,
                         input=True,
-                        frames_per_buffer=self.CHUNK)
+                        frames_per_buffer=self.chunk)
         
         print("*recording")
-
         frames = []
-
-        for i in range(0, int(self.RATE / self.CHUNK * self.RECORD_SECONDS)):
-            data = stream.read(self.CHUNK)
-            frames.append(data)
-
-        print("*done recording")
+        frames_n = int(self.rate / self.chunk * self.rec_duration)
+        for i in range(frames_n):
+            frame = stream.read(self.chunk)
+            frames.append(frame)
+        print("*done*")
+        
         stream.stop_stream()
         stream.close()
         p.terminate()
-        
-        self.save(p.get_sample_size(self.FORMAT), frames)
+        self.save(p.get_sample_size(self.format), frames)
 
 
     def save(self, sample_size, frames):
-        wf = wave.open(self.WAVE_OUTPUT_FILENAME, 'wb')
-        wf.setnchannels(self.CHANNELS)
+        wf = wave.open(self.file_path, 'wb')
+        wf.setnchannels(self.channels)
         wf.setsampwidth(sample_size)
-        wf.setframerate(self.RATE)
+        wf.setframerate(self.rate)
         wf.writeframes(b''.join(frames))
         wf.close()
 
 
     def get_live_rec_data(self):
-        y, _ = librosa.load(self.WAVE_OUTPUT_FILENAME, sr=self.RATE)
-        
+        y, _ = librosa.load(self.file_path, sr=self.rate)
+        #Split an audio signal into non-silent intervals
         split = librosa.effects.split(y)
         samples_num = split.shape[0]
-        # fig, ax = plt.subplots(nrows=(samples_num+1), sharex=True)
-        # librosa.display.waveshow(y, sr=self.RATE, ax=ax[0])
-
+        ##########
+        fig, ax = plt.subplots(nrows=(samples_num+1), sharex=True)
+        librosa.display.waveshow(y, sr=self.rate, ax=ax[0])
+        ##########
         for s in range(samples_num):
             s_start = split[s,0]
             s_stop = split[s,1]
-            s_len = s_stop - s_start
             sample = y[s_start:s_stop]
-            
-            if s_len<self.RATE:
-                middle_b = int(0.5*(self.RATE-s_len))
-                middle_e = int(0.5*(self.RATE+s_len))
-                norm_sample = np.zeros(self.RATE)
-                norm_sample[middle_b:middle_e] = sample
-                
-                # Compute MFCC features from the raw signal
-                mfcc = librosa.feature.mfcc(y=norm_sample, sr=self.RATE, n_mfcc=44)
-                
-                #Normalization of data (min=0.0; max=1.0)
-                mfcc_min = mfcc.min()
-                mfcc = np.array(list(map(lambda x: x-mfcc_min, mfcc)))
-                mfcc_max = mfcc.max()
-                mfcc = np.array(list(map(lambda x: x/mfcc_max, mfcc)))
-                
-                # librosa.display.waveshow(norm_sample, sr=self.RATE, ax=ax[s+1])
+            mfcc = get_mfcc(sample, self.rate, self.prep_duration, self.mfcc_n)
+            ##########
+            librosa.display.waveshow(sample, sr=self.rate, ax=ax[s+1])
+            ##########
+            #in fact it return mfcc of the first audio signal (s=0). It'll be changed in the future
+            return mfcc
 
-                #returns only 1st execution
-                return mfcc
-                
-                
-            else:
-                print("too long sample")
 
 
 if __name__ == '__main__':
-    audio = AudioRecord()
+    c = Configurator()
+    audio = AudioRecord(c)
     audio.record()
     g = audio.get_live_rec_data()
 
