@@ -6,86 +6,124 @@ import librosa.display
 import wave
 import matplotlib.pyplot as plt
 import os
-
+import queue
+import threading
 from prep import get_mfcc
 from config import Configurator
 
 class AudioRecord(object):
-    def __init__(self, config):
+    def __init__(self, config, data_queue):
         self.format = pyaudio.paInt16
-        self.chunk = 1024
+        self.chunk = 3024
         self.channels = 2        
         self.rate = config.get('audio', 'rate')
         self.rec_duration = config.get('audio', 'record duration')
         self.prep_duration = config.get('audio', 'prep duration')
         self.mfcc_n = config.get('audio', 'mfcc coefficients')
-
         self.output = config.get('directories', 'Temporary files')
-        self.rec_name = 'rec.wav'
-        self.file_path = os.path.join(self.output, self.rec_name)
-
-
-    def record(self):
-        p = pyaudio.PyAudio()
-        stream = p.open(format=self.format,
-                        channels=self.channels,
-                        rate=self.rate,
-                        input=True,
-                        frames_per_buffer=self.chunk)
+        self.threshold = 0.6
+        rec_name = 'rec.wav'
+        self.file_path = os.path.join(self.output, rec_name)
         
-        print("*recording")
-        frames = []
-        frames_n = int(self.rate / self.chunk * self.rec_duration)
-        for i in range(frames_n):
-            frame = stream.read(self.chunk)
-            frames.append(frame)
-        print("*done*")
+        self.record_q = queue.Queue()
+        self.data_q = data_queue
         
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
-        self.save(p.get_sample_size(self.format), frames)
+    def start_recording(self):
+        self.pyaudio = pyaudio.PyAudio()
+        self.stream = self.pyaudio.open(format=self.format,
+                                        channels=self.channels,
+                                        rate=self.rate,
+                                        input=True,
+                                        frames_per_buffer=self.chunk,
+                                        stream_callback=self.callback)
+        
+        threading.Thread(target=self.live, daemon=True).start()
 
 
-    def save(self, sample_size, frames):
+    
+    def callback(self, in_data, frame_count, time_info, status):
+        self.record_q.put(in_data)
+        return (in_data, pyaudio.paContinue)
+    
+    
+    def stop_recording(self):
+        self.stream.stop_stream()
+        self.stream.close()
+        self.pyaudio.terminate()
+        
+        self.record_q.join()
+
+
+    def save_record(self, frame):
         wf = wave.open(self.file_path, 'wb')
         wf.setnchannels(self.channels)
-        wf.setsampwidth(sample_size)
+        wf.setsampwidth(self.pyaudio.get_sample_size(self.format))
         wf.setframerate(self.rate)
-        wf.writeframes(b''.join(frames))
+        wf.writeframes(frame)
         wf.close()
 
-    def clear_temp(self):
+    def get_audio_data(self):
+        data = self.data_q.get()
+        self.data_q.task_done()
+        return data
+
+    def clear_temp_file(self):
         os.remove(self.file_path)
 
-    def get_live_rec_data(self):
+
+    def process_sample(self, buffer):
         y, _ = librosa.load(self.file_path, sr=self.rate)
-        self.clear_temp()
+        #extend the signal with a buffer of a potentially truncated sample from the previous frame
+        ext_y = np.concatenate((buffer, y))
+        #delete temporary record
+        self.clear_temp_file()
         #Split an audio signal into non-silent intervals
-        split = librosa.effects.split(y)
+        split = librosa.effects.split(ext_y)
         samples_num = split.shape[0]
-        ##########
-        # fig, ax = plt.subplots(nrows=(samples_num+1), sharex=True)
-        # librosa.display.waveshow(y, sr=self.rate, ax=ax[0])
-        ##########
+        samples = []
         for s in range(samples_num):
             s_start = split[s,0]
             s_stop = split[s,1]
-            sample = y[s_start:s_stop]
-            mfcc = get_mfcc(sample, self.rate, self.prep_duration, self.mfcc_n)
-            ##########
-            # librosa.display.waveshow(sample, sr=self.rate, ax=ax[s+1])
-            ##########
-            #in fact it return mfcc of the first audio signal (s=0). It'll be changed in the future
-            return mfcc
+            
+            margin = s_stop/len(ext_y)
+            # print(margin)
+            if margin > 0.98:
+                return ext_y[s_start:]
+                break
+            else:
+                sample = ext_y[s_start:s_stop]
+                #accept samples with significant amplitude
+                if np.max(sample) >= self.threshold:
+                    samples.append(sample)
 
+        #if the list of accepted samples is not empty
+        if samples:
+            # fig, ax = plt.subplots(nrows=(len(samples)+1), sharex=True)
+            # librosa.display.waveshow(ext_y, sr=self.rate, ax=ax[0])
+            ##########
+            for idx, s in enumerate(samples):
+                # librosa.display.waveshow(s, sr=self.rate, ax=ax[idx+1])
+                mfcc = get_mfcc(sample, self.rate, self.prep_duration, self.mfcc_n)
+                self.data_q.put(mfcc)
+
+                
+        return []
+
+
+    def live(self):
+       buffer = []
+       while True:
+           frame = self.record_q.get()
+           self.save_record(frame)
+           buffer = self.process_sample(buffer)
+           self.record_q.task_done()
+    
 
 
 if __name__ == '__main__':
     c = Configurator()
     audio = AudioRecord(c)
-    audio.record()
-    g = audio.get_live_rec_data()
+    audio.start_recording()
 
     
 
