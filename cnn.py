@@ -126,7 +126,7 @@ class AudioAI():
                             metrics=['accuracy'])
         return model
 
-
+    @prep.timer
     def predict(self, data):
         x_data =  np.expand_dims(data, axis=0)
         x_data =  np.expand_dims(x_data, axis=-1)

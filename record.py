@@ -1,6 +1,5 @@
 import numpy as np
 import pyaudio
-import time
 import librosa
 import librosa.display
 import wave
@@ -8,7 +7,7 @@ import matplotlib.pyplot as plt
 import os
 import queue
 import threading
-from prep import get_mfcc
+from prep import get_mfcc, timer
 from config import Configurator
 
 class AudioRecord(object):
@@ -57,15 +56,16 @@ class AudioRecord(object):
         return not self.data_q.empty() 
 
     
-    ''' *** Audio data processing  *** '''   
-    def process_sample(self, buffer):
-        y, _ = librosa.load(self.file_path, sr=self.rate)
-        #extend the signal with a buffer of a potentially truncated sample from the previous frame
-        ext_y = np.concatenate((buffer, y))
-        #delete temporary record
-        self.clear_temp_file()
+    ''' *** Audio data processing  *** ''' 
+    def process_sample(self, data):
+        # y, _ = librosa.load(self.file_path, sr=self.rate)
+        # print(y)
+        # #extend the signal with a buffer of a potentially truncated sample from the previous frame
+        # ext_y = np.concatenate((buffer, y))
+        # #delete temporary record
+        # self.clear_temp_file()
         #Split an audio signal into non-silent intervals
-        split = librosa.effects.split(ext_y)
+        split = librosa.effects.split(data)
         samples_num = split.shape[0]
         samples = []
         for s in range(samples_num):
@@ -73,13 +73,14 @@ class AudioRecord(object):
             s_stop = split[s,1]
             
             #determine whether the sample is truncated
-            margin = s_stop/len(ext_y)
-            if margin > 0.98:
-                return ext_y[s_start:]
+            margin = s_stop/len(data)
+            if margin == 1.0:
+                return data[s_start:]
 
             else:
-                sample = ext_y[s_start:s_stop]
+                sample = data[s_start:s_stop]
                 #accept samples with significant amplitude
+                # print(f'Max: {np.max(sample)}')
                 if np.max(sample) >= self.threshold:
                     samples.append(sample)
 
@@ -102,18 +103,28 @@ class AudioRecord(object):
     def live(self):
        buffer = []
        while True:
+           # frame = self.record_q.get()
+           # self.save_record(frame)
+           # buffer = self.process_sample(buffer)
+           # self.record_q.task_done()
+           
            frame = self.record_q.get()
-           self.save_record(frame)
-           buffer = self.process_sample(buffer)
-           self.record_q.task_done()
-
+           #extend the signal with a buffer of a potentially truncated sample from the previous frame
+           ext_frame = np.concatenate((buffer, frame))
+           buffer = self.process_sample(ext_frame)
 
     ''' *** Recording *** '''   
     def callback(self, in_data, frame_count, time_info, status):
-        self.record_q.put(in_data)
-        #########
-        self.history.append(in_data)
-        #########
+        data = np.frombuffer(in_data, dtype=np.int16) / 32768.0
+        self.record_q.put(data)
+        
+        # print(buffer)
+        # self.record_q.put(in_data)
+        # #########
+        # self.history.append(in_data)
+        # #########
+        
+        
         return (in_data, pyaudio.paContinue)
 
 

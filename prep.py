@@ -41,7 +41,7 @@ class AIAudioData:
 
 
 ''' *** Audio processing *** '''
-
+@timer
 def get_mfcc(audio, rate, duration, n_mfcc):
     #ensure that the audio sample has the specified duration. Otherwise, compress or stretch the signal.
     audio = adjust_audio(audio, rate, duration)
@@ -53,6 +53,7 @@ def file_mfcc(file, rate, duration, n_mfcc):
     mfcc = get_mfcc(audio, rate, duration, n_mfcc)
     return mfcc
 
+@timer
 def adjust_audio(y, sample_rate, output_duration):
     input_duration = len(y)/sample_rate
     if input_duration == output_duration:

@@ -24,4 +24,3 @@ if __name__ == '__main__':
         audio.stop_recording()
         
     audio.save_history()
-    
