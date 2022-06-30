@@ -5,26 +5,23 @@ from cnn import AudioAI
 import queue
 import time
 
-# def predict():
-#     audio_data = words_queue.get()
-#     ai.predict(audio_data)
 
 if __name__ == '__main__':
-    words_queue = queue.Queue()
-
     config = Configurator()
     data_collection = 'all'
     ai = AudioAI(config, data_collection)
-    audio = AudioRecord(config, words_queue)
+    audio = AudioRecord(config)
     audio.start_recording()
     
     try:
         print('Talk to me...')
-        while True:
-            audio_data = words_queue.get()
-            ai.predict(audio_data)
+        while True: 
+            if audio.data_available():
+                audio_data = audio.get_audio_data()
+                ai.predict(audio_data)
     except KeyboardInterrupt:
         print("End")
         audio.stop_recording()
         # words_queue.join()
         
+    audio.save_history()

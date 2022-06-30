@@ -12,7 +12,7 @@ from prep import get_mfcc
 from config import Configurator
 
 class AudioRecord(object):
-    def __init__(self, config, data_queue):
+    def __init__(self, config):
         self.format = pyaudio.paInt16
         self.chunk = 3024
         self.channels = 2        
@@ -26,7 +26,8 @@ class AudioRecord(object):
         self.file_path = os.path.join(self.output, rec_name)
         
         self.record_q = queue.Queue()
-        self.data_q = data_queue
+        self.data_q = queue.Queue()
+        self.history = []
         
     def start_recording(self):
         self.pyaudio = pyaudio.PyAudio()
@@ -43,8 +44,14 @@ class AudioRecord(object):
     
     def callback(self, in_data, frame_count, time_info, status):
         self.record_q.put(in_data)
+        #########
+        self.history.append(in_data)
+        #########
         return (in_data, pyaudio.paContinue)
     
+    
+    def data_available(self):
+        return not self.data_q.empty()
     
     def stop_recording(self):
         self.stream.stop_stream()
@@ -61,6 +68,12 @@ class AudioRecord(object):
         wf.setframerate(self.rate)
         wf.writeframes(frame)
         wf.close()
+        
+        
+    def save_history(self):
+        history = b''.join(self.history)
+        self.save_record(history)
+        
 
     def get_audio_data(self):
         data = self.data_q.get()
@@ -124,8 +137,6 @@ if __name__ == '__main__':
     c = Configurator()
     audio = AudioRecord(c)
     audio.start_recording()
-
-    
 
 # '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 # import numpy as np
