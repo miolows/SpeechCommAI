@@ -22,6 +22,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("End")
         audio.stop_recording()
-        # words_queue.join()
         
     audio.save_history()
+    
