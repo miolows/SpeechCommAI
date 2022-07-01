@@ -17,10 +17,11 @@ if __name__ == '__main__':
         print('Talk to me...')
         while True: 
             if audio.data_available():
+                print('hello')
                 audio_data = audio.get_audio_data()
                 ai.predict(audio_data)
     except KeyboardInterrupt:
         print("End")
         audio.stop_recording()
         
-    audio.save_history()
+    # audio.save_history()c
