@@ -6,6 +6,7 @@ import wave
 import matplotlib.pyplot as plt
 import os
 import queue
+from multiprocessing import Process, Queue
 import threading
 from prep import get_mfcc, timer
 from config import Configurator
@@ -16,11 +17,10 @@ class AudioRecord(object):
     def __init__(self, config):
         self.format = pyaudio.paInt16
         self.chunk = 3024
-        self.channels = 2        
+        self.channels = 1       
         self.rate = config.get('audio', 'rate')
-        self.rec_duration = config.get('audio', 'record duration')
-        self.prep_duration = config.get('audio', 'prep duration')
         self.mfcc_n = config.get('audio', 'mfcc coefficients')
+        self.prep_duration = config.get('audio', 'prep duration')
         self.output = config.get('directories', 'Temporary files')
         self.threshold = 0.5
         rec_name = 'rec.wav'
@@ -28,7 +28,6 @@ class AudioRecord(object):
         
         self.record_q = queue.Queue()
         self.data_q = queue.Queue()
-        self.history = []
         self.counter = 0
     
     
@@ -41,10 +40,6 @@ class AudioRecord(object):
         wf.writeframes(frame)
         wf.close()
         
-    def save_history(self):
-        history = b''.join(self.history)
-        self.save_record(history)
-
 
     def clear_temp_file(self):
         os.remove(self.file_path)    
@@ -112,13 +107,12 @@ class AudioRecord(object):
            ext_frame = np.concatenate((buffer, frame))
            buffer = self.process_sample(ext_frame)
 
+
     ''' *** Recording *** '''   
     def callback(self, in_data, frame_count, time_info, status):
         data = np.frombuffer(in_data, dtype=np.int16) / 32768.0
-        # data = np.fromstring(in_data, dtype=np.int16)
-        # data = data.astype(np.float32, order='C') / 32768.0
         self.record_q.put(data)
-        self.history.append(in_data)
+
         return (in_data, pyaudio.paContinue)
 
 
@@ -134,14 +128,14 @@ class AudioRecord(object):
         threading.Thread(target=self.live, daemon=False).start()
 
 
+
     def stop_recording(self):
         self.stream.stop_stream()
         self.stream.close()
         self.pyaudio.terminate()
-        self.save_history()
-        # self.record_q.join()
 
 
+    
 if __name__ == '__main__':
     c = Configurator()
     audio = AudioRecord(c)
