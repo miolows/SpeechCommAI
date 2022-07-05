@@ -41,7 +41,6 @@ class AIAudioData:
 
 
 ''' *** Audio processing *** '''
-@timer
 def get_mfcc(audio, rate, duration, n_mfcc):
     #ensure that the audio sample has the specified duration. Otherwise, compress or stretch the signal.
     audio = adjust_audio(audio, rate, duration)
@@ -53,15 +52,22 @@ def file_mfcc(file, rate, duration, n_mfcc):
     mfcc = get_mfcc(audio, rate, duration, n_mfcc)
     return mfcc
 
-@timer
-def adjust_audio(y, sample_rate, output_duration):
-    input_duration = len(y)/sample_rate
-    if input_duration == output_duration:
-        return y
-    else:
+def adjust_audio(sample, sample_rate, output_duration):
+    sample_len = len(sample)
+    input_duration = sample_len/sample_rate
+    
+    if input_duration < output_duration:
+        sample_long = np.zeros(output_duration*sample_rate)
+        sample_long[:sample_len] = sample
+        return sample_long
+    
+    elif input_duration > output_duration:
         r = input_duration/output_duration
-        y_adjusted = librosa.effects.time_stretch(y, rate=r)
-        return y_adjusted
+        sample_short = librosa.effects.time_stretch(sample, rate=r)
+        return sample_short
+    else:
+        return sample
+    
 
 def get_delta_mfcc(mfcc, d_order):
     delta_mfcc = librosa.feature.delta(mfcc, order=d_order)
@@ -143,6 +149,43 @@ def prep_dataset(config):
         curr_dir = os.path.basename(class_path)
         if curr_dir != dataset:
             prep_class(prep_dir, class_path, audio_files, s_max, v_perc, t_perc, sample_rate, duration, n_mfcc)
+
+
+
+def process_signal(output_queue, signal, threshold, rate, duration, mfcc_n):
+    #Split an audio signal into non-silent intervals
+    non_silent = librosa.effects.split(signal, top_db=40)
+    samples_num = non_silent.shape[0]
+    feedback = []
+
+    for s in range(samples_num):
+        s_start = non_silent[s,0]
+        s_stop = non_silent[s,1]
+        
+        if s_stop == len(signal):
+            #if the sample ends with the end of a whole signal, assume that
+            #it is truncated and pass it to feedback
+            feedback = signal[s_start:]
+        else:
+            #if the sample ends within a signal, proceed processing
+            sample = signal[s_start:s_stop]
+            
+            if np.max(sample) > threshold:
+                mfcc = get_mfcc(sample, rate, duration, mfcc_n)
+                output_queue.put(mfcc)
+        
+    return feedback
+
+
+def process_live_record(input_queue, output_queue, threshold, rate, duration, mfcc_n):
+   feedback = []
+   while True:
+       if not input_queue.empty():
+           frame = input_queue.get()
+           #extend the signal with a buffer of a potentially truncated sample from the previous frame
+           frames = np.concatenate((feedback, frame))
+           feedback = process_signal(output_queue, frames, threshold, rate, duration, mfcc_n)
+
 
 
 ''' *** Data loading from JSON files *** '''

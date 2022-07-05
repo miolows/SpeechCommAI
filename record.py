@@ -12,9 +12,9 @@ from prep import get_mfcc, timer
 from config import Configurator
 import soundfile as sf
 import time
-
+from prep import timer
 class AudioRecord(object):
-    def __init__(self, config):
+    def __init__(self, config, record_queue):
         self.format = pyaudio.paInt16
         self.chunk = 3024
         self.channels = 1       
@@ -26,9 +26,9 @@ class AudioRecord(object):
         rec_name = 'rec.wav'
         self.file_path = os.path.join(self.output, rec_name)
         
-        self.record_q = queue.Queue()
-        self.data_q = queue.Queue()
-        self.counter = 0
+        self.record_q = record_queue
+        # self.data_q = queue.Queue()
+        # self.counter = 0
     
     
     ''' *** .wav file I/O methods *** '''
@@ -46,66 +46,97 @@ class AudioRecord(object):
     
     
     ''' *** Processed audio data queue  *** '''    
-    def get_audio_data(self):
-        data = self.data_q.get()
-        self.data_q.task_done()
-        return data
+    # def get_audio_data(self):
+    #     data = self.data_q.get()
+    #     self.data_q.task_done()
+    #     return data
     
-    def data_available(self):
-        return not self.data_q.empty() 
+    # def data_available(self):
+    #     return not self.data_q.empty() 
 
     
     ''' *** Audio data processing  *** ''' 
-    def process_sample(self, data):
+    # @timer
+    def process_signal(self, signal):
         #Split an audio signal into non-silent intervals
-        split = librosa.effects.split(data, top_db=40)
-        samples_num = split.shape[0]
-        samples = []
+        non_silent = librosa.effects.split(signal, top_db=40)
+        samples_num = non_silent.shape[0]
+        feedback = []
+
         for s in range(samples_num):
-            s_start = split[s,0]
-            s_stop = split[s,1]
+            s_start = non_silent[s,0]
+            s_stop = non_silent[s,1]
             
-            
-            #determine whether the sample is truncated
-            margin = s_stop/len(data)
-            if margin == 1.0:
-                return data[s_start:]
-
+            if s_stop == len(signal):
+                #if the sample ends with the end of a whole signal, assume that
+                #it is truncated and pass it to feedback
+                feedback = signal[s_start:]
             else:
-                # print('data:')
-                # print(s_start, s_stop)
-                sample = data[s_start:s_stop]
-                #accept samples with significant amplitude
-                # print(f'Max: {np.max(sample)}')
-                if np.max(sample) >= self.threshold:
-                    samples.append(sample)
-
-        #if the list of accepted samples is not empty
-        if samples:
-            self.counter += 1
-            #''' signal plotting for testing '''
-            fig, ax = plt.subplots(nrows=(len(samples)+1), sharex=True)
-            librosa.display.waveshow(data, sr=self.rate, ax=ax[0])
-            for idx, s in enumerate(samples):
+                #if the sample ends within a signal, proceed processing
+                feedback = []
+                sample = signal[s_start:s_stop]
                 
-                sf.write(f'{self.counter} - {idx}.wav', s, self.rate)
-                librosa.display.waveshow(s, sr=self.rate, ax=ax[idx+1])
-                mfcc = get_mfcc(sample, self.rate, self.prep_duration, self.mfcc_n)
-                # print('self.record_q: ', self.record_q.qsize())
-                # print('self.data_q:', self.data_q.qsize())
+                if np.max(sample) > self.threshold:
+                    mfcc = get_mfcc(sample, self.rate, self.prep_duration, self.mfcc_n)
+                    self.data_q.put(mfcc)
+            
+        return feedback
 
-                self.data_q.put(mfcc)
+                
 
-        return []
+    
+    # @timer
+    # def process_sample(self, buffer=[]):
+    #     frame = self.record_q.get()
+    #     #extend the signal with a buffer of a potentially truncated sample from the previous frame
+    #     data = np.concatenate((buffer, frame))
+        
+    #     split = librosa.effects.split(data, top_db=40)
+    #     samples_num = split.shape[0]
+    #     samples = []
+    #     for s in range(samples_num):
+    #         s_start = split[s,0]
+    #         s_stop = split[s,1]
+    #         #determine whether the sample is truncated
+    #         margin = s_stop/len(data)
+    #         if margin == 1.0:
+    #             self.process_sample(data[s_start:])
+
+    #         else:
+    #             # print('data:')
+    #             # print(s_start, s_stop)
+    #             sample = data[s_start:s_stop]
+    #             #accept samples with significant amplitude
+    #             # print(f'Max: {np.max(sample)}')
+    #             if np.max(sample) >= self.threshold:
+    #                 samples.append(sample)
+
+    #     #if the list of accepted samples is not empty
+    #     if samples:
+    #         self.counter += 1
+    #         #''' signal plotting for testing '''
+    #         fig, ax = plt.subplots(nrows=(len(samples)+1), sharex=True)
+    #         librosa.display.waveshow(data, sr=self.rate, ax=ax[0])
+    #         for idx, s in enumerate(samples):
+                
+    #             # sf.write(f'{self.counter} - {idx}.wav', s, self.rate)
+    #             librosa.display.waveshow(s, sr=self.rate, ax=ax[idx+1])
+    #             mfcc = get_mfcc(sample, self.rate, self.prep_duration, self.mfcc_n)
+    #             # print('self.record_q: ', self.record_q.qsize())
+    #             # print('self.data_q:', self.data_q.qsize())
+
+    #             self.data_q.put(mfcc)
+
+    #     self.process_sample([])
 
 
     def live(self):
-       buffer = []
+       feedback = []
        while True:
            frame = self.record_q.get()
            #extend the signal with a buffer of a potentially truncated sample from the previous frame
-           ext_frame = np.concatenate((buffer, frame))
-           buffer = self.process_sample(ext_frame)
+           frames = np.concatenate((feedback, frame))
+           feedback = self.process_signal(frames)
 
 
     ''' *** Recording *** '''   
@@ -125,7 +156,7 @@ class AudioRecord(object):
                                         frames_per_buffer=self.chunk,
                                         stream_callback=self.callback)
         
-        threading.Thread(target=self.live, daemon=False).start()
+        # threading.Thread(target=self.live, daemon=False).start()
 
 
 
