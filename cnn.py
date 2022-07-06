@@ -7,7 +7,7 @@ import numpy as np
 import time
 import os
 
-import prep
+import load
 # from config import Configurator
 from callbacks import TrainingCallback, PredictionCallback
 # from record import AudioRecord
@@ -44,7 +44,7 @@ class AudioAI():
         self.model = self.build(l2(0.0005))
         self.model.summary()
 
-        validation, testing, training = prep.load_data(data_dir, self.class_names)
+        validation, testing, training = load.load_data(data_dir, self.class_names)
         
         self.train(epoch_num, self.prep_data(training), self.prep_data(validation))
 
