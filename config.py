@@ -71,19 +71,8 @@ class Configurator():
         c = ConfigParser()
         c.read(self.config_file)
         return c
-    
-
-    # def get(self, key):
-    #     try:
-    #         data = self.config[key]
-    #         return data
             
-    #     except KeyError:
-    #         print("Error!")
-    #         print("There is no '{}' section in the config file.".format(key))
-    #         sys.exit()
-        
-
+    
     def get(self, key, subkey):
         try:
             data = self.config[key][subkey]

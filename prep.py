@@ -1,7 +1,7 @@
 import numpy as np
 import librosa
 from librosa.effects import time_stretch
-import os
+import os, sys
 import json
 from dataclasses import dataclass, asdict
 import hashlib
@@ -11,6 +11,7 @@ import functools
 import time
 
 from config import Configurator
+
 
 def timer(func):
     """Print the runtime of the decorated function"""
@@ -178,13 +179,13 @@ def process_signal(output_queue, signal, threshold, rate, duration, mfcc_n):
 
 
 def process_live_record(input_queue, output_queue, threshold, rate, duration, mfcc_n):
-   feedback = []
-   while True:
-       if not input_queue.empty():
-           frame = input_queue.get()
-           #extend the signal with a buffer of a potentially truncated sample from the previous frame
-           frames = np.concatenate((feedback, frame))
-           feedback = process_signal(output_queue, frames, threshold, rate, duration, mfcc_n)
+    feedback = []
+    while True:
+        if not input_queue.empty():
+            frame = input_queue.get()
+            #extend the signal with a buffer of a potentially truncated sample from the previous frame
+            frames = np.concatenate((feedback, frame))
+            feedback = process_signal(output_queue, frames, threshold, rate, duration, mfcc_n)
 
 
 

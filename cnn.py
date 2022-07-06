@@ -8,9 +8,9 @@ import time
 import os
 
 import prep
-from config import Configurator
+# from config import Configurator
 from callbacks import TrainingCallback, PredictionCallback
-from record import AudioRecord
+# from record import AudioRecord
 
 class AudioAI():
     def __init__(self, config, collection, train=False):
@@ -147,14 +147,15 @@ class AudioAI():
 
           
 if __name__ == '__main__':
-    config = Configurator()
-    data_collection = 'all'
-    ai = AudioAI(config, data_collection)
+    pass
+    # config = Configurator()
+    # data_collection = 'all'
+    # ai = AudioAI(config, data_collection)
 
-    rec = AudioRecord(config)
-    for i in range(10):
+    # rec = AudioRecord(config)
+    # for i in range(10):
         
-        rec.record()
-        audio_data = rec.get_live_rec_data()
-        ai.predict(audio_data)
-        time.sleep(3.0)
+    #     rec.record()
+    #     audio_data = rec.get_live_rec_data()
+    #     ai.predict(audio_data)
+    #     time.sleep(3.0)
