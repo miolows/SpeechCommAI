@@ -50,8 +50,8 @@ class AudioAI():
 
 
     def prep_data(self, data):
-        x = np.expand_dims(np.concatenate(data['mfcc']), axis=-1)
-        y = np_utils.to_categorical(np.concatenate(data['labels']), num_classes=self.class_num)
+        x = np.expand_dims(np.concatenate(data.mfcc), axis=-1)
+        y = np_utils.to_categorical(np.concatenate(data.labels), num_classes=self.class_num)
         return x,y
     
     
@@ -145,11 +145,12 @@ class AudioAI():
             print("You said {}".format(self.class_names[y_pred]))
 
 
-          
 if __name__ == '__main__':
     config = Configurator()
-    data_collection = 'first 30'
+    data_collection = 'all'
     ai = AudioAI(config, data_collection, True)
+    
+    '''Finished 'load_data' in 2.2979 secs'''
 
     # rec = AudioRecord(config)
     # for i in range(10):
