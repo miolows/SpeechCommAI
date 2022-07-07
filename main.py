@@ -7,8 +7,8 @@ from wrap import timer
 if __name__ == '__main__':
     
     config = Configurator()
-    data_collection = 'all'
-    ai = AudioAI(config, data_collection)
+    data_collection = 'first 2'
+    ai = AudioAI(config, data_collection, True)
     
     live_record(config, ai)
     

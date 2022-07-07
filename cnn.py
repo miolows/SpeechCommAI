@@ -8,7 +8,7 @@ import time
 import os
 
 import load
-# from config import Configurator
+from config import Configurator
 from callbacks import TrainingCallback, PredictionCallback
 # from record import AudioRecord
 
@@ -129,7 +129,7 @@ class AudioAI():
     def predict(self, data):
         x_data =  np.expand_dims(data, axis=0)
         x_data =  np.expand_dims(x_data, axis=-1)
-        predict = self.model.predict(x_data)
+        predict = self.model.predict(x_data, callbacks=[PredictionCallback()])
         y_pred = np.argmax(predict, axis=-1)[0]
         y_pred_perc = np.squeeze(predict)[y_pred]
         # print(predict)
@@ -147,10 +147,9 @@ class AudioAI():
 
           
 if __name__ == '__main__':
-    pass
-    # config = Configurator()
-    # data_collection = 'all'
-    # ai = AudioAI(config, data_collection)
+    config = Configurator()
+    data_collection = 'first 30'
+    ai = AudioAI(config, data_collection, True)
 
     # rec = AudioRecord(config)
     # for i in range(10):

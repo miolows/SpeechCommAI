@@ -46,10 +46,33 @@ class Configurator():
                                    'up',  'visual',  'wow',  'yes',  'zero'],
                            
                             'first 2': ['backward',  'bed'],
-                           
+                            
+                            'first 5': ['backward',  'bed',  'bird',  'cat',  'dog'],
+                            
                             'first 10': ['backward',  'bed',  'bird',  'cat',  'dog',  
                                         'down',  'eight',  'five',  'follow',  'forward'],
-            
+                            
+                            'first 15': ['backward',  'bed',  'bird',  'cat',  'dog',  
+                                        'down',  'eight',  'five',  'follow',  'forward',  
+                                        'four',  'go',  'happy',  'house',  'learn'],
+                            
+                            'first 19': ['backward',  'bed',  'bird',  'cat',  'dog',  
+                                        'down',  'eight',  'five',  'follow',  'forward',  
+                                        'four',  'go',  'happy',  'house',  'learn',
+                                        'left',  'marvin',  'nine',  'no'],
+                            
+                            'first 20': ['backward',  'bed',  'bird',  'cat',  'dog',  
+                                        'down',  'eight',  'five',  'follow',  'forward',  
+                                        'four',  'go',  'happy',  'house',  'learn',
+                                        'left',  'marvin',  'nine',  'no',  'off'],
+                            
+                            'first 30': ['backward',  'bed',  'bird',  'cat',  'dog',  
+                                        'down',  'eight',  'five',  'follow',  'forward',  
+                                        'four',  'go',  'happy',  'house',  'learn',
+                                        'left',  'marvin',  'nine',  'no',  'off',  
+                                        'on',  'one',  'right',  'seven',  'sheila',  
+                                        'six',  'stop',  'three',  'tree',  'two'],
+                            
                             'numbers': ['zero', 'one', 'two', 'three', 'four',
                                        'five', 'six', 'seven', 'eight', 'nine']}
         c['ai'] = {
