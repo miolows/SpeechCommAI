@@ -1,5 +1,5 @@
+import os
 import numpy as np
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.font_manager import FontProperties
@@ -21,77 +21,106 @@ class HistoryPlot():
 
 
 class ConfMatrix():
-    def __init__(self, title, words_label, y, x):
-        self.title = title
+    def __init__(self, words_label, save_path, cmap='CMRmap'):
         self.labels = words_label
+        self.m_len = len(words_label)
+        self.color_map = cmap
+        self.save_path = save_path
+        
+        self.y_data = np.zeros(self.m_len)
+        self.x_data = np.zeros(self.m_len)
+
+        self.title_fontsize = 17
+        self.title_pad = 20
+        self.labels_fontsize = 15
+        self.labels_pad = 20
+        self.ticks_fontsize = self.ticks_fsize()
+        
+        self.px_val_decimal = self.pixel_vdecimal()
+        self.px_val_size = self.pixel_vsize()
+        
+        
+    def update(self, y, x):
         self.y_data = y
         self.x_data = x
-        
-        self.matrix = confusion_matrix(y, x, normalize='pred')
-        self.m_len = len(words_label)
 
-        self.fig = plt.figure()
 
-    def save(self, figure, file_name, dpi=199):
-        figure.savefig(file_name, dpi=dpi) 
+    def save(self, title):
+        self.draw(title, to_save=True)
+        
+        file_name = 'Confusion Matrix.png'
+        path = os.path.join(self.save_path, file_name)
+        plt.savefig(path, dpi=150, bbox_inches='tight')
 
-    def draw(self, color_map, fn):
-        # cmp = cm.get_cmap(color_map)
-        y_label = 'True class'
-        x_label = 'Predicted class'
-        
-        plt.imshow(self.matrix, cmap=color_map, norm=Normalize(0,1))
-        
-        self.write_on_pixels()
 
-        # ''' Adjust the text size to prevent overlapping. Is there a more organic way to do this? '''
-        # if self.m_len < 20:
-        #     dec = "%.2f"
-        #     if self.m_len >= 10:
-        #         dec = "%.1f"
-        #     size = max(20 - self.m_len, 1)
-        #     self.annotate_matrix(dec, size)
+    def draw(self, title, to_save=False):
+        plt.figure()
+        matrix = confusion_matrix(self.y_data, self.x_data, normalize='pred')
         
-        plt.title(self.title)
-        plt.ylabel(y_label)
-        plt.xlabel(x_label)    
+        plt.imshow(matrix, cmap=self.color_map, norm=Normalize(0,1))
+        self.write_on_pixels(matrix)
+        plt.title(title, 
+                  fontsize=self.title_fontsize, pad=self.title_pad)
+        plt.ylabel('True class',
+                   fontsize=self.labels_fontsize)
+        plt.xlabel('Predicted class',
+                   fontsize=self.labels_fontsize)
+        plt.yticks(np.arange(self.m_len), self.labels, 
+                   fontsize=self.ticks_fontsize)        
+        plt.xticks(np.arange(self.m_len), self.labels, 
+                   fontsize=self.ticks_fontsize, rotation='vertical')
         
-        plt.yticks(np.arange(self.matrix.shape[0]), self.labels)
-        plt.xticks(np.arange(self.matrix.shape[1]), self.labels, rotation='vertical')
         plt.colorbar()
-        self.save(self.fig, fn)
-        plt.show()
+        if not to_save:
+            plt.show()
+            
+        # fig.clear()
         
-    def linear(self, x_0, y_0, x):
-        b = x_0
-        a = -(x_0/y_0)
-        y = a*x + b
+        
+    def linear(self, x, y_0, x_0, v=(0,0)):
+        ''' 
+        y_0 - y(x=0)
+        x_0 - y(m)=0
+        v - shift vector
+        '''
+        b = y_0         
+        a = -(y_0/x_0)
+        y = (a*(x-v[0]) + b) + v[1]
         return y
+    
+    
+    def ticks_fsize(self):
+        start_s = 15
+        l_max = 60
+        
+        s = self.linear(self.m_len, start_s, l_max)
+        size = max(s, 0)
+        return size
+
         
     def pixel_vdecimal(self):
-        dec_0 = 2
+        start_dec = 2
         l_max = 20
         
-        d = int(np.round(self.linear(dec_0, l_max, self.m_len)))
-        decimal = max(d, 1)
-        dec = f'%.{decimal}f'
-        return dec
+        d = int(np.round(self.linear(self.m_len, start_dec, l_max)))
+        dec = max(d, 1)
+        decimal = f'%.{dec}f'
+        return decimal
+    
     
     def pixel_vsize(self):
-        size_0 = 20
+        start_s = 20
         l_max = 20
-        size = max(self.linear(size_0, l_max, self.m_len), 5)
+        s = self.linear(self.m_len, start_s, l_max)
+        size = max(s, 0)
         return size 
     
-    def write_on_pixels(self, txt_col=['white', 'black']):
-        val_dec = self.pixel_vdecimal()
-        val_size = self.pixel_vsize()
-        if val_size: #if the size is not 0
-            for index, val in np.ndenumerate(self.matrix):
+    
+    def write_on_pixels(self, matrix, txt_col=['white', 'black']):
+        if self.px_val_size: #if the value size is not 0
+            for index, val in np.ndenumerate(matrix):
                 y, x = index
-                txt = val_dec % val #'%.Xf' % val (% is not a modulo)
+                txt = self.px_val_decimal % val #'%.Xf' % val (% is not a modulo)
                 col = txt_col[int(np.round(val))]
                 plt.text(x, y, txt, ha="center", va="center", 
-                         fontproperties=FontProperties(size=val_size), color=col)
-
-    
+                         fontproperties=FontProperties(size=self.px_val_size), color=col)

@@ -1,4 +1,5 @@
 from keras.callbacks import Callback
+from tensorflow.keras.models import save_model
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -13,7 +14,7 @@ class TrainingCallback(Callback):
         self.validation_data = val_data
         self.labels = labels 
         self.max_val_acc = 0
-        
+        self.confusion_matrix = ConfMatrix(labels, result_dir)
         
     def on_train_begin(self, logs=None):
         if not os.path.exists(self.result_dir):
@@ -28,23 +29,21 @@ class TrainingCallback(Callback):
         val_predict = self.model.predict(self.validation_data[0])
         y_pred = np.argmax(val_predict, axis=-1)
         y_true = self.validation_data[1].argmax(axis=1)
-        print(len(y_pred), len(y_true))
-        plot_title = 'Confusion Matrix of Epoch: ' + str(epoch)
-        cm = ConfMatrix(plot_title, self.labels, y_true, y_pred)
-        cm.draw('CMRmap', 'aaa')
+
+        self.confusion_matrix.update(y_true, y_pred)
+        draw_title = f'Confusion Matrix of Epoch: {epoch}'
+        self.confusion_matrix.draw(draw_title)
         
         if self.max_val_acc < logs['val_accuracy']:
             self.max_val_acc = logs['val_accuracy']
-            print("Change of acc: ", self.max_val_acc)
-            self.model.save(self.result_dir)
-            plot_title = f"Confusion Matrix (accuracy = {100*self.max_val_acc:.1f}%)"
-            cm_to_save = ConfMatrix(plot_title, self.labels, y_true, y_pred)
-            cm_to_save.draw('CMRmap', os.path.join(self.result_dir, 'ConfMatrix'))
+            print()
+            print(f"Change of acc: {self.max_val_acc:.3f}")
             
-        
-        
+            save_title = f"Confusion Matrix (accuracy = {100*self.max_val_acc:.1f}%)"
+            self.confusion_matrix.save(save_title)
+            save_model(self.model, self.result_dir)
+
     def on_train_end(self, logs=None):
-        # self.model.save(self.result_dir)
         print(logs)
         
         # # Plot and save training & validation accuracy values
