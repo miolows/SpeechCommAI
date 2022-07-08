@@ -150,12 +150,3 @@ if __name__ == '__main__':
     data_collection = 'all'
     ai = AudioAI(config, data_collection, True)
     
-    '''Finished 'load_data' in 2.2979 secs'''
-
-    # rec = AudioRecord(config)
-    # for i in range(10):
-        
-    #     rec.record()
-    #     audio_data = rec.get_live_rec_data()
-    #     ai.predict(audio_data)
-    #     time.sleep(3.0)
