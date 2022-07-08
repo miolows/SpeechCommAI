@@ -1,6 +1,6 @@
 import concurrent.futures
-from dataclasses import dataclass, asdict, fields
-from tqdm.asyncio import tqdm
+from dataclasses import dataclass
+from tqdm import tqdm, asyncio
 import json
 import os
 
@@ -23,10 +23,9 @@ class AIAudioData:
 
 
 ''' *** Data loading from JSON files *** '''
-def load_set(class_path, set_name, index):
-    set_file = os.path.join(class_path, f'{set_name}.json')
-    with open(set_file, "r") as jsonFile:
-        data = json.load(jsonFile)
+def load_set(set_path, index):
+    with open(set_path, "r") as json_file:
+        data = json.load(json_file)
         class_name = data['class_name']
         mfcc = data['mfcc']
         labels = [index] * len(mfcc)
@@ -41,11 +40,11 @@ def load_data(data_dir, labels):
     output = [AIAudioData([],[],[]) for _ in range(len(sets))]
     
     for idx, set_name in enumerate(sets):
-        print(f"Loading {set_name} data")
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            set_data = [executor.submit(load_set, class_path, set_name, index) 
-                        for index, class_path in enumerate(tqdm(classes))]
+            set_data = [executor.submit(load_set, os.path.join(class_path, f'{set_name}.json'), index) 
+                        for index, class_path in enumerate(asyncio.tqdm(classes, desc=f"Loading {set_name} data"))]
             
-            for f in concurrent.futures.as_completed(set_data):
+            for f in concurrent.futures.as_completed(tqdm(set_data, desc='data packing')):
                 output[idx].append(f.result())
+
     return output
