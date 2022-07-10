@@ -4,20 +4,36 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 from matplotlib.font_manager import FontProperties
 from sklearn.metrics import confusion_matrix
+from matplotlib.ticker import MaxNLocator
 
-class HistoryPlot():
-    def __init__(self, output, data, param, title, ylabel, xlabel='Epoch'):
-        fig = plt.figure()
-        plt.plot(data.history[param])
-        plt.plot(data.history['val_'+param])
-        plt.title(title)
-        plt.ylabel(ylabel)
-        plt.xlabel(xlabel)
-        plt.xticks(range(len(data.history[param])))
-        plt.legend(['Train', 'Test'], loc='upper left')
-        fig.savefig(output + title + '.png', dpi=199) 
-        fig.autofmt_xdate()
-        plt.show()
+def plot_history(output, data):
+    params=['accuracy', 'loss']
+    fig, axs = plt.subplots(2, 1, constrained_layout=True)
+    
+    title = 'Model History'
+    fig.subplots_adjust(hspace=0.4, top=0.85)
+    fig.suptitle(title, fontsize=15)
+    path = os.path.join(output, 'Model history.png')                
+
+    for p, param in enumerate(params):
+        y_training = data.history[param]
+        x_training = range(1, len(y_training) + 1)
+        y_validation = data.history[f'val_{param}']
+        x_validation = range(1, len(y_validation) + 1)
+        
+        axs[p].plot(x_training, y_training, label='training')
+        axs[p].plot(x_validation, y_validation, label='validation')
+
+        axs[p].set_ylabel(param)
+        axs[p].set_xlabel('Epoch')
+        axs[p].xaxis.set_major_locator(MaxNLocator(integer=True))            
+        axs[p].grid(True)
+
+    axs[0].legend(loc='upper center', bbox_to_anchor=(0.5, 1.3),
+              fancybox=True, shadow=True, ncol=2)
+    
+    plt.savefig(path, dpi=150, bbox_inches='tight')
+    plt.show()
 
 
 class ConfMatrix():
@@ -71,12 +87,15 @@ class ConfMatrix():
                    fontsize=self.ticks_fontsize, rotation='vertical')
         
         plt.colorbar()
-        if not to_save:
+        
+        #I tried to prevent showing saved figure, but it doesn't work. 
+        #It ends up popping up in the next call of this function, which has to_save=False.
+        if to_save:
+            plt.ioff()
+        else:
             plt.show()
             
-        # fig.clear()
-        
-        
+
     def linear(self, x, y_0, x_0, v=(0,0)):
         ''' 
         y_0 - y(x=0)
