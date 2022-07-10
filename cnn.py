@@ -4,12 +4,11 @@ from tensorflow.keras.regularizers import l2
 from tensorflow.keras import backend as K
 from keras.utils import np_utils
 import numpy as np
-import time
 import os
 
 import load
 from config import Configurator
-from callbacks import TrainingCallback, PredictionCallback
+from callback import TrainingCallback
 # from record import AudioRecord
 
 class AudioAI():
@@ -127,26 +126,21 @@ class AudioAI():
         return model
 
     def predict(self, data):
-        x_data =  np.expand_dims(data, axis=0)
-        x_data =  np.expand_dims(x_data, axis=-1)
-        predict = self.model.predict(x_data, callbacks=[PredictionCallback()])
+        x_data = np.expand_dims(data, axis=0)
+        x_data = np.expand_dims(x_data, axis=-1)
+        predict = self.model.predict(x_data)
         y_pred = np.argmax(predict, axis=-1)[0]
-        y_pred_perc = np.squeeze(predict)[y_pred]
-        # print(predict)
-        # print(y_pred_perc)
-        # list(map(lambda x: self.labels))
-        if y_pred_perc<0.3:
-            print("I don't know what you said. Maybe {}".format(self.class_names[y_pred]))
-        elif y_pred_perc>0.3 and y_pred_perc<0.6: 
-            print("I bet that you said {}".format(self.class_names[y_pred]))
-        elif y_pred_perc>0.6 and y_pred_perc<0.8: 
-            print("I'm pretty sure you said {}".format(self.class_names[y_pred]))
+        y_pred_perc = np.round(np.squeeze(predict)[y_pred]*100,1)
+        
+        if y_pred_perc>50:
+            print(f'{self.class_names[y_pred]} ({y_pred_perc})')
         else:
-            print("You said {}".format(self.class_names[y_pred]))
+            print('signal ignored')
+        
 
 
 if __name__ == '__main__':
     config = Configurator()
-    data_collection = 'all'
+    data_collection = 'first 2'
     ai = AudioAI(config, data_collection, True)
     
