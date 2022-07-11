@@ -90,7 +90,7 @@ Visualization of the learned network (confusion matrix)
 ![confusion matrix](https://gcdnb.pbrd.co/images/kkaaZCLfopNO.png?o=1)
 
 The model's learning history
-![history](https://i.postimg.cc/SnD7LHsf/Model-history.png)
+![history](https://gcdnb.pbrd.co/images/Ee8q1CdoEGiI.png?o=1)
 
 
 ## Project status
