@@ -1,9 +1,7 @@
 #Project dirs and files:
 Dataset/
-mfcc_Dataset/
-others/
-prep_dataset/
-Wyniki/
+Prep_Dataset/
+Test/
 speech_commands_v0.02.tar.gz
 
 
