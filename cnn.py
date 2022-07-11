@@ -1,7 +1,6 @@
-from tensorflow.keras.layers import BatchNormalization, Conv2D, Activation, Flatten, Dropout, Dense
+from tensorflow.keras.layers import BatchNormalization, Conv2D, Flatten, Dropout, Dense
 from tensorflow.keras import models
 from tensorflow.keras.regularizers import l2
-from tensorflow.keras import backend as K
 from keras.utils import np_utils
 import numpy as np
 import os
@@ -18,9 +17,9 @@ class AudioAI():
         
         #get essential data from config file
         model_dir = self.config.get('directories', 'Saved models')
-        self.model_subdir = os.path.join(model_dir, collection)
-        self.sample_shape = self.config.get('audio', 'sample shape')
         self.class_names = self.config.get('data', collection)
+        self.input_shape = self.config.get('audio', 'sample shape')
+        self.model_subdir = os.path.join(model_dir, collection)
         self.class_num = len(self.class_names)
         
         if train:
@@ -40,7 +39,7 @@ class AudioAI():
     def to_train(self):
         data_dir = self.config.get('directories', 'Preprocessed data')
         epoch_num = self.config.get('ai', 'epochs')
-        self.model = self.build(l2(0.0005))
+        self.model = self.build()
         self.model.summary()
 
         validation, testing, training = load.load_data(data_dir, self.class_names)
@@ -62,68 +61,54 @@ class AudioAI():
                        callbacks = [callback])
 
 
-    def build(self, reg, init="he_normal"):
-        # initialize the model along with the input shape to be
-		# "channels last" and the channels dimension itself
+    def build(self):
+        
+        kernel = (3,3)
+        strid = (2, 2)
+        pad = "same"
+        activ = 'relu'
+        reg = l2(0.0005)
+        
         model = models.Sequential()
-        inputShape = self.sample_shape
-        chanDim = -1
-# 		# if we are using "channels first", update the input shape
-# 		# and channels dimension
-#         if K.image_data_format() == "channels_first":
-#             inputShape = (depth, height, width)
-#             chanDim = 1
+        model.add(Conv2D(16, kernel_size=kernel, strides=strid, padding=pad,
+                         kernel_regularizer=reg, input_shape=self.input_shape))
+        model.add(Conv2D(16, kernel_size=kernel, strides=strid, padding=pad,
+                         kernel_regularizer=reg, activation=activ))
+        model.add(BatchNormalization())
+        model.add(Conv2D(16, kernel_size=kernel, strides=strid, padding=pad,
+                         kernel_regularizer=reg, activation=activ))
+        model.add(BatchNormalization())
+        model.add(Dropout(0.25))     
         
-        model.add(Conv2D(16, (7, 7), strides=(2, 2), padding="valid",
-			kernel_initializer=init, kernel_regularizer=reg,
-			input_shape=inputShape))
-		# here we stack two CONV layers on top of each other where
-		# each layers will learn a total of 32 (3x3) filters
-        model.add(Conv2D(32, (3, 3), padding="same",
-                              kernel_initializer=init, kernel_regularizer=reg))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization(axis=chanDim))
-        model.add(Conv2D(32, (3, 3), strides=(2, 2), padding="same",
-                              kernel_initializer=init, kernel_regularizer=reg))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization(axis=chanDim))
+        model.add(Conv2D(64, kernel_size=kernel, strides=strid, padding=pad,
+                         kernel_regularizer=reg, activation=activ))
+        model.add(BatchNormalization())
+        model.add(Conv2D(64, kernel_size=kernel, strides=strid, padding=pad,
+                         kernel_regularizer=reg, activation=activ))
+        model.add(BatchNormalization())
         model.add(Dropout(0.25))
         
-        # stack two more CONV layers, keeping the size of each filter
-		# as 3x3 but increasing to 64 total learned filters
-        model.add(Conv2D(64, (3, 3), padding="same",
-			kernel_initializer=init, kernel_regularizer=reg))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization(axis=chanDim))
-        model.add(Conv2D(64, (3, 3), strides=(2, 2), padding="same",
-			kernel_initializer=init, kernel_regularizer=reg))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization(axis=chanDim))
-        model.add(Dropout(0.25))
-		# increase the number of filters again, this time to 128
-        model.add(Conv2D(128, (3, 3), padding="same",
-			kernel_initializer=init, kernel_regularizer=reg))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization(axis=chanDim))
-        model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same",
-			kernel_initializer=init, kernel_regularizer=reg))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization(axis=chanDim))
+        model.add(Conv2D(128, kernel_size=kernel, strides=strid, padding=pad,
+                         kernel_regularizer=reg, activation=activ))
+        model.add(BatchNormalization())        
+        model.add(Conv2D(128, kernel_size=kernel, strides=strid, padding=pad,
+                         kernel_regularizer=reg, activation=activ))
+        model.add(BatchNormalization())
         model.add(Dropout(0.25))
         
         # y-connected layer
         model.add(Flatten())
-        model.add(Dense(512, kernel_initializer=init))
-        model.add(Activation("relu"))
+        model.add(Dense(512, activation='relu'))
         model.add(BatchNormalization())
-        model.add(Dropout(0.5))
-        #max classifier
-        model.add(Dense(self.class_num))
-        model.add(Activation("softmax"))
+        model.add(Dropout(0.25))
+
+        model.add(Dense(self.class_num, activation='softmax'))
+        
         model.compile(loss='categorical_crossentropy', 
                             optimizer="adam",
                             metrics=['accuracy'])
         return model
+
 
     def predict(self, data):
         x_data = np.expand_dims(data, axis=0)
@@ -141,6 +126,6 @@ class AudioAI():
 
 if __name__ == '__main__':
     config = Configurator()
-    data_collection = 'first 2'
+    data_collection = 'all'
     ai = AudioAI(config, data_collection, True)
     
