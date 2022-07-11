@@ -87,7 +87,7 @@ Plots:
 
 ## Screenshots
 Visualization of the learned network (confusion matrix)
-![confusion matrix](https://i.postimg.cc/G4cxybcp/Confusion-Matrix.png)
+![confusion matrix](https://pasteboard.co/kkaaZCLfopNO.png)
 
 The model's learning history
 ![history](https://i.postimg.cc/SnD7LHsf/Model-history.png)
