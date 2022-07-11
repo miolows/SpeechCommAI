@@ -66,7 +66,7 @@ To use this program run `main.py` in your IDE or by the command line:
 ```
 python main.py
 ```
-When the message appears, the user can say a word from [the list of learned patterns](#List of patterns), and the program will try to predict it and print it along with the percentage of matching. If no pattern has been selected with satisfactory certainty (more than 50%), the program will ignore the signal.
+When the message appears, the user can say a word from [the list of learned patterns](#List-of-patterns), and the program will try to predict it and print it along with the percentage of matching. If no pattern has been selected with satisfactory certainty (more than 50%), the program will ignore the signal.
 
 
 
