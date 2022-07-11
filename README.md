@@ -16,22 +16,7 @@
 ## Introduction
 The goal of the project was to create a convolutional neural network, teach it to recognize 35 words (speech commands) from the used [TensorFlow database](https://www.tensorflow.org/datasets/catalog/speech_commands), and implement live audio data acquisition to recognize speech recorded by the user.
 
-
-## Setup
-The project requirements are listed in the requirements.txt file. To install them type in the command line:
-```
-pip install -r requirements.txt
-```
-
-
-## Usage
-To use this program run `main.py` in your IDE or by the command line:
-```
-python main.py
-```
-after the message appears, the user can say a word from the list of learned patterns, and the program will try to predict it and list it along with the percentage of matching. If no pattern has been selected with satisfactory certainty (less than 50%), the program will tell the user to ignore the signal.
-
-List of patterns:
+### List of patterns:
 - backward
 - bed
 - bird
@@ -69,6 +54,19 @@ List of patterns:
 - zero
 
 
+## Setup
+The project requirements are listed in the requirements.txt file. To install them type in the command line:
+```
+pip install -r requirements.txt
+```
+
+
+## Usage
+To use this program run `main.py` in your IDE or by the command line:
+```
+python main.py
+```
+When the message appears, the user can say a word from [the list of learned patterns](#List of patterns), and the program will try to predict it and print it along with the percentage of matching. If no pattern has been selected with satisfactory certainty (more than 50%), the program will ignore the signal.
 
 
 ## Technologies used
@@ -84,13 +82,16 @@ Plots:
 - matplotlib - version 3.5.1
 - scikit-learn - version 1.0.2
 
-
 ## Screenshots
 Visualization of the learned network (confusion matrix)
+
 ![confusion matrix](https://gcdnb.pbrd.co/images/kkaaZCLfopNO.png?o=1)
 
-The model's learning history
-![history](https://i.postimg.cc/SnD7LHsf/Model-history.png)
+
+The model's learning history:
+
+![history](https://gcdnb.pbrd.co/images/Ee8q1CdoEGiI.png?o=1)
+
 
 
 ## Project status
