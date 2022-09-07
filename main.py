@@ -1,8 +1,8 @@
-from config import Configurator
-from cnn import AudioAI
-from live import live_record
+from speechcommai.config import Configurator
+from speechcommai.ai.cnn import AudioAI
+from speechcommai.audio.live import live_record
 
-from wrap import timer
+from speechcommai.wrap import timer
 
 if __name__ == '__main__':
     

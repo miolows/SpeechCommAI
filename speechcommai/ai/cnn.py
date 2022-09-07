@@ -5,9 +5,9 @@ from keras.utils import np_utils
 import numpy as np
 import os
 
-import load
-from config import Configurator
-from callback import TrainingCallback
+import speechcommai.data.load as load
+from speechcommai.config import Configurator
+from .callback import TrainingCallback
 # from record import AudioRecord
 
 class AudioAI():

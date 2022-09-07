@@ -4,7 +4,7 @@ from tqdm import tqdm, asyncio
 import json
 import os
 
-from wrap import timer
+from speechcommai.wrap import timer
 
 
 @dataclass

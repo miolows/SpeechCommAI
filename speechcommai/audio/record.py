@@ -1,7 +1,7 @@
 import numpy as np
 import pyaudio
 
-from wrap import timer
+from speechcommai.wrap import timer
 
 class Record(object):
     def __init__(self, config, record_queue):

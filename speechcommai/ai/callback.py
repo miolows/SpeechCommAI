@@ -3,7 +3,7 @@ from tensorflow.keras import models
 import numpy as np
 import os
 
-from plot import ConfMatrix, plot_history
+from speechcommai.data.plot import ConfMatrix, plot_history
 
 
 class TrainingCallback(Callback):

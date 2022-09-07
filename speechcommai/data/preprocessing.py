@@ -4,10 +4,10 @@ import os, re
 import json
 import hashlib
 
-from config import Configurator
-import audio
+from speechcommai.config import Configurator
+import speechcommai.audio.audio as audio
 
-from wrap import timer
+from speechcommai.wrap import timer
 
 
 @dataclass

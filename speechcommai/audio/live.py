@@ -2,8 +2,8 @@ import numpy as np
 import librosa
 from multiprocessing import Queue, Process
 
-import audio
-from record import Record
+import speechcommai.audio.audio as audio
+from speechcommai.audio.record import Record
 
 
 def process_signal(output_queue, signal, threshold, rate, duration, mfcc_n):
@@ -65,7 +65,7 @@ def live_record(config, ai):
                                       duration,
                                       mfcc_n))
     
-    record_processing.daemon = True
+    record_processing.daemon = False
     #start processing before recording starts to minimise time delay
     record_processing.start()
     record.start_recording()    
