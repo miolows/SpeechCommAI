@@ -3,12 +3,10 @@ from tqdm import tqdm
 import os, re
 import json
 import hashlib
+import tomli
 
-from speechcommai.config import Configurator
 import speechcommai.audio.audio as audio
-
 from speechcommai.wrap import timer
-
 
 @dataclass
 class PrepAudioData:
@@ -74,16 +72,19 @@ def prep_class(prep_dir, class_path, audio_files, max_per_class, validation_perc
     save(class_prep_dir, train_fname, training)
         
         
-def prep_dataset(config):
-    dataset = config.get('directories', 'Dataset')
-    prep_dir = config.get('directories', 'Preprocessed data')
-    sample_rate = config.get('audio', 'rate')
-    duration = config.get('audio', 'prep duration')
-    n_mfcc = config.get('audio', 'mfcc coefficients')
+def prep_dataset():
+    with open("config.toml", mode="rb") as fp:
+        config = tomli.load(fp)
+        
+    dataset = config['directories']['Dataset']
+    prep_dir = config['directories']['Preprocessed data']
+    sample_rate = config['audio']['rate']
+    duration = config['audio']['prep duration']
+    n_mfcc = config['audio']['mfcc coefficients']
     
-    s_max = config.get('preprocessing', 'sample max')
-    v_perc = config.get('preprocessing', 'validation percentage')
-    t_perc = config.get('preprocessing', 'testing percentage')
+    s_max = config['preprocessing']['sample max']
+    v_perc = config['preprocessing']['validation percentage']
+    t_perc = config['preprocessing']['testing percentage']
                              
     for class_path, subdirs, audio_files in os.walk(dataset):
         curr_dir = os.path.basename(class_path)
@@ -92,5 +93,4 @@ def prep_dataset(config):
 
 
 if __name__ == "__main__":
-    config = Configurator()
-    prep_dataset(config)
+    prep_dataset()

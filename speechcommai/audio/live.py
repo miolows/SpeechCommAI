@@ -1,5 +1,6 @@
 import numpy as np
 import librosa
+import tomli
 from multiprocessing import Queue, Process
 
 import speechcommai.audio.audio as audio
@@ -47,16 +48,19 @@ def predict_live_speech(queue, ai):
         ai.predict(data)
 
 
-def live_record(config, ai):
-    rate = config.get('audio', 'rate')
-    mfcc_n = config.get('audio', 'mfcc coefficients')
-    duration = config.get('audio', 'prep duration')    
+def live_record(ai):
+    with open("config.toml", mode="rb") as fp:
+        config = tomli.load(fp)
+    
+    rate = config['audio']['rate']
+    mfcc_n = config['audio']['mfcc_coefficients']
+    duration = config['audio']['prep_duration']
     threshold = 0.5
     
     raw_record_queue = Queue()
     speech_data_queue = Queue()
     
-    record = Record(config, raw_record_queue)
+    record = Record(raw_record_queue)
     record_processing = Process(target=process_live_record, 
                                 args=(raw_record_queue, 
                                       speech_data_queue, 

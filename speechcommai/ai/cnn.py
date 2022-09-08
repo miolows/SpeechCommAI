@@ -4,23 +4,26 @@ from tensorflow.keras.regularizers import l2
 from keras.utils import np_utils
 import numpy as np
 import os
+import tomli
 
 import speechcommai.data.load as load
-from speechcommai.config import Configurator
 from .callback import TrainingCallback
 # from record import AudioRecord
 
 class AudioAI():
-    def __init__(self, config, collection, train=False):
-        self.config = config
+    def __init__(self, collection, train=False):
         self.collection = collection
         
+        with open("config.toml", mode="rb") as fp:
+            self.config = tomli.load(fp)
+        
         #get essential data from config file
-        model_dir = self.config.get('directories', 'Saved models')
-        self.class_names = self.config.get('data', collection)
-        self.input_shape = self.config.get('audio', 'sample shape')
+        model_dir = self.config['directories']['saved_models']
+        self.class_names = self.config['data'][collection]
+        self.input_shape = self.config['audio']['sample_shape']
         self.model_subdir = os.path.join(model_dir, collection)
         self.class_num = len(self.class_names)
+        
         
         if train:
             self.to_train()
@@ -37,8 +40,8 @@ class AudioAI():
     
     
     def to_train(self):
-        data_dir = self.config.get('directories', 'Preprocessed data')
-        epoch_num = self.config.get('ai', 'epochs')
+        data_dir = self.config['directories']['Preprocessed data']
+        epoch_num = self.config['ai']['epochs']
         self.model = self.build()
         self.model.summary()
 
@@ -125,7 +128,6 @@ class AudioAI():
 
 
 if __name__ == '__main__':
-    config = Configurator()
     data_collection = 'all'
-    ai = AudioAI(config, data_collection, True)
+    ai = AudioAI(data_collection, True)
     

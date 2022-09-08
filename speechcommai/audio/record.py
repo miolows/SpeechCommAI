@@ -1,11 +1,14 @@
 import numpy as np
 import pyaudio
+import tomli
 
 from speechcommai.wrap import timer
 
 class Record(object):
-    def __init__(self, config, record_queue):
-        self.rate = config.get('audio', 'rate')
+    def __init__(self, record_queue):
+        with open("config.toml", mode="rb") as fp:
+            self.config = tomli.load(fp)
+        self.rate = self.config['audio']['rate']
         self.record_q = record_queue
         self.format = pyaudio.paInt16
         self.chunk = 3024
