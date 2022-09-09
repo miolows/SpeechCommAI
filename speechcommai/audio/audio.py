@@ -3,15 +3,15 @@ import librosa
 
 
 ''' *** Audio processing *** '''
-def get_mfcc(audio, rate, duration, n_mfcc):
+def get_mfcc(audio, rate, duration, n_mfcc, hop_l):
     #ensure that the audio sample has the specified duration. Otherwise, compress or stretch the signal.
     audio = adjust_audio(audio, rate, duration)
-    mfcc = librosa.feature.mfcc(y=audio, sr=rate, n_mfcc=n_mfcc)
+    mfcc = librosa.feature.mfcc(y=audio, sr=rate, n_mfcc=n_mfcc, hop_length=hop_l)
     return mfcc
 
-def get_file_mfcc(file, rate, duration, n_mfcc):
+def get_file_mfcc(file, rate, duration, n_mfcc, hop_l):
     audio, _ = librosa.load(file, sr=rate)
-    mfcc = get_mfcc(audio, rate, duration, n_mfcc)
+    mfcc = get_mfcc(audio, rate, duration, n_mfcc, hop_l)
     return mfcc
 
 def adjust_audio(sample, sample_rate, output_duration):
@@ -34,3 +34,6 @@ def adjust_audio(sample, sample_rate, output_duration):
 def get_delta_mfcc(mfcc, d_order):
     delta_mfcc = librosa.feature.delta(mfcc, order=d_order)
     return delta_mfcc
+
+
+

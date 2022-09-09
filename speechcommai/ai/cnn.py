@@ -11,22 +11,32 @@ from .callback import TrainingCallback
 # from record import AudioRecord
 
 class AudioAI():
-    def __init__(self, collection, train=False):
-        self.collection = collection
-        
+    def __init__(self, collection, train=False, epoch_num=40):        
         with open("config.toml", mode="rb") as fp:
-            self.config = tomli.load(fp)
+            config = tomli.load(fp)
+
+        #get essential data from the config file
+        dirs = config['directories']
+        audio = config['audio']
+        model_dir = dirs['saved_models']
+        self.prep_data_dir = dirs['preprocessed_data']
+        self.class_names = config['data'][collection]
         
-        #get essential data from config file
-        model_dir = self.config['directories']['saved_models']
-        self.class_names = self.config['data'][collection]
-        self.input_shape = self.config['audio']['sample_shape']
+        
+        rate = audio['rate']
+        dur = audio['duration']
+        hop = audio['hop_length']
+        shape0 = audio['mfcc']
+        shape1 = int(dur*rate/hop) + 1
+        
+        self.input_shape = (shape0, shape1, 1)
+        
         self.model_subdir = os.path.join(model_dir, collection)
         self.class_num = len(self.class_names)
-        
-        
+
+
         if train:
-            self.to_train()
+            self.to_train(epoch_num)
         else:
             self.load_model(self.model_subdir)
         
@@ -39,14 +49,11 @@ class AudioAI():
             self.to_train()
     
     
-    def to_train(self):
-        data_dir = self.config['directories']['Preprocessed data']
-        epoch_num = self.config['ai']['epochs']
+    def to_train(self, epoch_num):
         self.model = self.build()
         self.model.summary()
 
-        validation, testing, training = load.load_data(data_dir, self.class_names)
-        
+        validation, testing, training = load.load_data(self.prep_data_dir, self.class_names)
         self.train(epoch_num, self.prep_data(training), self.prep_data(validation))
 
 

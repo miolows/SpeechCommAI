@@ -7,7 +7,7 @@ import speechcommai.audio.audio as audio
 from speechcommai.audio.record import Record
 
 
-def process_signal(output_queue, signal, threshold, rate, duration, mfcc_n):
+def process_signal(output_queue, signal, threshold, rate, duration, mfcc_n, hop_l):
     #Split an audio signal into non-silent intervals
     non_silent = librosa.effects.split(signal, top_db=40)
     samples_num = non_silent.shape[0]
@@ -26,20 +26,20 @@ def process_signal(output_queue, signal, threshold, rate, duration, mfcc_n):
             sample = signal[s_start:s_stop]
             
             if np.max(sample) > threshold:
-                mfcc = audio.get_mfcc(sample, rate, duration, mfcc_n)
+                mfcc = audio.get_mfcc(sample, rate, duration, mfcc_n, hop_l)
                 output_queue.put(mfcc)
         
     return feedback
 
 
-def process_live_record(input_queue, output_queue, threshold, rate, duration, mfcc_n):
+def process_live_record(input_queue, output_queue, threshold, rate, duration, mfcc_n, hop_l):
     feedback = []
     while True:
         if not input_queue.empty():
             frame = input_queue.get()
             #extend the signal with a buffer of a potentially truncated sample from the previous frame
             frames = np.concatenate((feedback, frame))
-            feedback = process_signal(output_queue, frames, threshold, rate, duration, mfcc_n)
+            feedback = process_signal(output_queue, frames, threshold, rate, duration, mfcc_n, hop_l)
             
 
 def predict_live_speech(queue, ai):
@@ -51,10 +51,14 @@ def predict_live_speech(queue, ai):
 def live_record(ai):
     with open("config.toml", mode="rb") as fp:
         config = tomli.load(fp)
+        
+    a_data = config['audio']
     
-    rate = config['audio']['rate']
-    mfcc_n = config['audio']['mfcc_coefficients']
-    duration = config['audio']['prep_duration']
+    rate = a_data['rate']
+    mfcc_n = a_data['mfcc']
+    duration = a_data['duration']
+    hop_length = a_data['hop_length']
+
     threshold = 0.5
     
     raw_record_queue = Queue()
@@ -67,7 +71,8 @@ def live_record(ai):
                                       threshold, 
                                       rate, 
                                       duration,
-                                      mfcc_n))
+                                      mfcc_n,
+                                      hop_length))
     
     record_processing.daemon = False
     #start processing before recording starts to minimise time delay
