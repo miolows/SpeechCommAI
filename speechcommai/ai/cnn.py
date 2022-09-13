@@ -72,45 +72,53 @@ class AudioAI():
 
 
     def build(self):
-        
         kernel = (3,3)
         strid = (2, 2)
-        pad = "same"
+        pad = 'same'
         activ = 'relu'
+        init = 'he_normal'
         reg = l2(0.0005)
         
         model = models.Sequential()
         model.add(Conv2D(16, kernel_size=kernel, strides=strid, padding=pad,
-                         kernel_regularizer=reg, input_shape=self.input_shape))
-        model.add(Conv2D(16, kernel_size=kernel, strides=strid, padding=pad,
-                         kernel_regularizer=reg, activation=activ))
+                         kernel_initializer=init, kernel_regularizer=reg, 
+                         input_shape=self.input_shape))
+        
+        model.add(Conv2D(32, kernel_size=kernel, strides=strid, padding=pad,
+                         kernel_initializer=init, kernel_regularizer=reg, 
+                         activation=activ))
         model.add(BatchNormalization())
-        model.add(Conv2D(16, kernel_size=kernel, strides=strid, padding=pad,
-                         kernel_regularizer=reg, activation=activ))
+        model.add(Conv2D(32, kernel_size=kernel, strides=strid, padding=pad,
+                         kernel_initializer=init, kernel_regularizer=reg,
+                         activation=activ))
         model.add(BatchNormalization())
         model.add(Dropout(0.25))     
         
         model.add(Conv2D(64, kernel_size=kernel, strides=strid, padding=pad,
-                         kernel_regularizer=reg, activation=activ))
+                         kernel_initializer=init, kernel_regularizer=reg, 
+                         activation=activ))
         model.add(BatchNormalization())
         model.add(Conv2D(64, kernel_size=kernel, strides=strid, padding=pad,
-                         kernel_regularizer=reg, activation=activ))
+                         kernel_initializer=init, kernel_regularizer=reg, 
+                         activation=activ))
         model.add(BatchNormalization())
         model.add(Dropout(0.25))
         
         model.add(Conv2D(128, kernel_size=kernel, strides=strid, padding=pad,
-                         kernel_regularizer=reg, activation=activ))
+                         kernel_initializer=init, kernel_regularizer=reg, 
+                         activation=activ))
         model.add(BatchNormalization())        
         model.add(Conv2D(128, kernel_size=kernel, strides=strid, padding=pad,
-                         kernel_regularizer=reg, activation=activ))
+                         kernel_initializer=init, kernel_regularizer=reg, 
+                         activation=activ))
         model.add(BatchNormalization())
         model.add(Dropout(0.25))
         
         # y-connected layer
         model.add(Flatten())
-        model.add(Dense(512, activation='relu'))
+        model.add(Dense(512, kernel_initializer=init, activation=activ))
         model.add(BatchNormalization())
-        model.add(Dropout(0.25))
+        model.add(Dropout(0.5))
 
         model.add(Dense(self.class_num, activation='softmax'))
         

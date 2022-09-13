@@ -2,7 +2,6 @@ import tomli
 from speechcommai.ai.cnn import AudioAI
 from speechcommai.audio.live import live_record
 from speechcommai.data.preprocessing import prep_dataset
-
 from speechcommai.wrap import timer
 
 def preprocessing(**kwargs):
@@ -23,12 +22,15 @@ def preprocessing(**kwargs):
                  sample_rate, duration, n_mfcc, hop_l,
                  **kwargs)
 
+def train_ai(collection='all'):
+    ai = AudioAI(collection, train=True)
 
+
+def live_rec(collection='all'):
+    ai = AudioAI(collection)
+    live_record(ai)
+    
+    
 if __name__ == '__main__':
-    
-    # data_collection = 'all'
-    # ai = AudioAI(data_collection)
-    
-    # live_record(ai)
-    # prep_dataset()
-    sss = preprocessing(training=70, validation=15, testing=15)
+    # preprocessing(training=70, validation=15, testing=15)
+    train_ai()
