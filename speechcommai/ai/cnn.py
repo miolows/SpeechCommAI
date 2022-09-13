@@ -53,14 +53,23 @@ class AudioAI():
         self.model = self.build()
         self.model.summary()
 
-        validation, testing, training = load.load_data(self.prep_data_dir, self.class_names)
-        self.train(epoch_num, self.prep_data(training), self.prep_data(validation))
+        validation = load.load_data(self.prep_data_dir, self.class_names, 'validation')
+        validation = self.reshape_data(validation)
+        training = load.load_data(self.prep_data_dir, self.class_names, 'training')
+        training = self.reshape_data(training)
+        
+        self.train(epoch_num,training, validation)
 
-
-    def prep_data(self, data):
-        x = np.expand_dims(np.concatenate(data.mfcc), axis=-1)
-        y = np_utils.to_categorical(np.concatenate(data.labels), num_classes=self.class_num)
+    def reshape_data(self, data):
+        sample_num = len(data[0])
+        x = np.reshape(data[0], (sample_num, *self.input_shape))
+        y = np_utils.to_categorical(data[1], num_classes=self.class_num)
         return x,y
+    
+    # def prep_data(self, data):
+    #     x = np.expand_dims(np.concatenate(data.mfcc), axis=-1)
+    #     y = np_utils.to_categorical(np.concatenate(data.labels), num_classes=self.class_num)
+    #     return x,y
     
     
     def train(self, epoch_num, train_data, valid_data):

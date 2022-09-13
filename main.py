@@ -2,6 +2,8 @@ import tomli
 from speechcommai.ai.cnn import AudioAI
 from speechcommai.audio.live import live_record
 from speechcommai.data.preprocessing import prep_dataset
+from speechcommai.data.load import load_data
+
 from speechcommai.wrap import timer
 
 def preprocessing(**kwargs):
@@ -32,5 +34,6 @@ def live_rec(collection='all'):
     
     
 if __name__ == '__main__':
-    # preprocessing(training=70, validation=15, testing=15)
+    preprocessing(training=80, validation=20)
     train_ai()
+    # x = load_data('Prep_Dataset', ['bed', 'bird'], 'validation')
