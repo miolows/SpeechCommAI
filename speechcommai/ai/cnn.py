@@ -3,81 +3,48 @@ from tensorflow.keras import models
 from tensorflow.keras.regularizers import l2
 from keras.utils import np_utils
 import numpy as np
-import os
-import tomli
-
-import speechcommai.data.load as load
 from .callback import TrainingCallback
-# from record import AudioRecord
 
-class AudioAI():
-    def __init__(self, collection, train=False, epoch_num=40):        
-        with open("config.toml", mode="rb") as fp:
-            config = tomli.load(fp)
 
-        #get essential data from the config file
-        dirs = config['directories']
-        audio = config['audio']
-        model_dir = dirs['saved_models']
-        self.prep_data_dir = dirs['preprocessed_data']
-        self.class_names = config['data'][collection]
-        
-        
-        rate = audio['rate']
-        dur = audio['duration']
-        hop = audio['hop_length']
-        shape0 = audio['mfcc']
-        shape1 = int(dur*rate/hop) + 1
-        
-        self.input_shape = (shape0, shape1, 1)
-        
-        self.model_subdir = os.path.join(model_dir, collection)
+
+class CNN():
+    def __init__(self, model_path, class_names, input_shape):
+        self.model_path = model_path
+        self.class_names = class_names
         self.class_num = len(self.class_names)
+        self.input_shape = input_shape
+        self.model = None
 
 
-        if train:
-            self.to_train(epoch_num)
-        else:
-            self.load_model(self.model_subdir)
-        
-    
-    def load_model(self, model_path):
+    def load_model(self):
         try:
-            self.model = models.load_model(model_path)
+            self.model = models.load_model(self.model_path)
         except:
-            print("There is no trained model in", model_path)
-            self.to_train()
+            print("There is no trained model in", self.model_path)
+            
     
-    
-    def to_train(self, epoch_num):
+    def train_model(self, train_data, valid_data, epoch_num=40):
         self.model = self.build()
         self.model.summary()
-
-        validation = load.load_data(self.prep_data_dir, self.class_names, 'validation')
-        validation = self.reshape_data(validation)
-        training = load.load_data(self.prep_data_dir, self.class_names, 'training')
-        training = self.reshape_data(training)
         
-        self.train(epoch_num,training, validation)
-
+        training = self.reshape_data(train_data)
+        validation = self.reshape_data(valid_data)
+        self.train(training, validation, epoch_num)
+    
+    
     def reshape_data(self, data):
         sample_num = len(data[0])
         x = np.reshape(data[0], (sample_num, *self.input_shape))
         y = np_utils.to_categorical(data[1], num_classes=self.class_num)
         return x,y
     
-    # def prep_data(self, data):
-    #     x = np.expand_dims(np.concatenate(data.mfcc), axis=-1)
-    #     y = np_utils.to_categorical(np.concatenate(data.labels), num_classes=self.class_num)
-    #     return x,y
     
-    
-    def train(self, epoch_num, train_data, valid_data):
-        callback = TrainingCallback(self.model_subdir, self.class_names, valid_data)
+    def train(self, train_data, valid_data, epoch_num):
+        tc = TrainingCallback(self.model_path, self.class_names, valid_data)
         self.model.fit(train_data[0], train_data[1], 
                        validation_data = valid_data,
                        epochs = epoch_num, 
-                       callbacks = [callback])
+                       callbacks = [tc])
 
 
     def build(self):
@@ -138,8 +105,7 @@ class AudioAI():
 
 
     def predict(self, data):
-        x_data = np.expand_dims(data, axis=0)
-        x_data = np.expand_dims(x_data, axis=-1)
+        x_data = np.reshape(data, (1, *self.input_shape))
         predict = self.model.predict(x_data)
         y_pred = np.argmax(predict, axis=-1)[0]
         y_pred_perc = np.round(np.squeeze(predict)[y_pred]*100,1)
@@ -148,10 +114,3 @@ class AudioAI():
             print(f'{self.class_names[y_pred]} ({y_pred_perc})')
         else:
             print('signal ignored')
-        
-
-
-if __name__ == '__main__':
-    data_collection = 'all'
-    ai = AudioAI(data_collection, True)
-    
