@@ -4,13 +4,20 @@ from speechcommai.ai.cnn import CNN
 from speechcommai.audio.live import live_record
 from speechcommai.data.preprocessing import prep_dataset
 from speechcommai.data.load import load_data
+from speechcommai.data.download import download
 
 from speechcommai.wrap import timer
+
 
 def get_from_config(*args):
     with open("config.toml", mode="rb") as fp:
         config = tomli.load(fp)
     return [config[v] for v in args]
+
+def download_speech_data():
+    dirs = get_from_config('directories')[0]
+    dataset = dirs['dataset']
+    download(dataset)
 
 def preprocessing(**kwargs):
     dirs, audio = get_from_config('directories', 'audio')
@@ -40,7 +47,7 @@ def init_ai(collection='all'):
     return CNN(model_path, class_names, input_shape)
 
 def train_ai(ai, collection='all'):
-    dirs, data = get_from_config('directories', 'audio', 'data')
+    dirs, data = get_from_config('directories', 'data')
     prep_data_dir = dirs['preprocessed_data']
     class_names = data[collection]
     
@@ -55,6 +62,7 @@ def live(ai):
     
     
 if __name__ == '__main__':
+    # download_speech_data()
     # preprocessing(training=80, validation=20)
     speech_comm_ai = init_ai()
     # train_ai(speech_comm_ai)
