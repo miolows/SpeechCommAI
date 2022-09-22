@@ -80,7 +80,7 @@ In addition, the `T` and `L` options can take one more optional argument specify
 
 
 ## Technologies used
-Mchine learning:
+Machine learning:
 - TensorFlow - version 2.9.1
 - Keras - version 2.9.0
 
