@@ -1,22 +1,22 @@
 # SpeechCommAI
-> This is a speech recognition program, written in Python, that can predict up to 35 spoken words.
-> It can work on live recorded data.
-
+> SpeechCommAI is a console program for predicting up to 35 spoken words.
 
 ## Table of Contents
 * [Introduction](#Introduction)
+* [Requirements](#Requirements)
 * [Setup](#setup)
 * [Usage](#usage)
 * [Technologies used](#technologies-used)
 * [Screenshots](#screenshots)
-* [Project status](#project-status)
 * [Contact](#contact)
 
 
 ## Introduction
-The goal of the project was to create a convolutional neural network, teach it to recognize 35 words (speech commands) from the used [TensorFlow database](https://www.tensorflow.org/datasets/catalog/speech_commands), and implement live audio data acquisition to recognize speech recorded by the user.
+This project can be used to recognize speech commands, recorded in real-time. Prediction is made by a convolutional neural network based on Keras, learned on the [TensorFlow database](https://www.tensorflow.org/datasets/catalog/speech_commands).
+Using special options, users can download a dataset, preprocess it and teach the program themselves.
 
-### List of patterns:
+
+### List of the speech commands
 - backward
 - bed
 - bird
@@ -54,38 +54,46 @@ The goal of the project was to create a convolutional neural network, teach it t
 - zero
 
 
+## Requirements
+- python (3.7+)
+- pip
+- required libraries listet in the `requirements.txt` file
+
 ## Setup
-The project requirements are listed in the requirements.txt file. To install them type in the command line:
+You can install requirements by the follwing command:
 ```
 pip install -r requirements.txt
 ```
 
-
 ## Usage
-To use this program run `main.py` in your IDE or by the command line:
+To use this program run `main.py` in the command line:
 ```
-python main.py
+python main.py <option>
 ```
-When the message appears, the user can say a word from [the list of learned patterns](#List-of-patterns), and the program will try to predict it and print it along with the percentage of matching. If no pattern has been selected with satisfactory certainty (more than 50%), the program will ignore the signal.
+As an `<option>` one of the following can be selected:
+`D` – Download the raw dataset
+`P` – Pre-process the dataset
+`T` – Train the model
+`L` – Live record
 
-
+In addition, the `T` and `L` options can take one more optional argument specifying the type of set of words to be trained. The word sets are available in the `config.toml` file. If the name of the set is not specified, the program will accept the entire set of 35 words by default.
 
 
 ## Technologies used
 Mchine learning:
-- TensorFlow - version 2.3.0
-- Keras - version 2.4.3
+- TensorFlow - version 2.9.1
+- Keras - version 2.9.0
 
 Audio processing:
 - librosa - version 0.9.1
-- PyAudio- version 0.2.11
+- PyAudio - version 0.2.12
 
 Plots:
 - matplotlib - version 3.5.1
-- scikit-learn - version 1.0.2
+- scikit-learn - version 1.1.2
 
 ## Screenshots
-Visualization of the learned network (confusion matrix)
+Visualization of the learned network (confusion matrix):
 
 ![confusion matrix](https://gcdnb.pbrd.co/images/kkaaZCLfopNO.png?o=1)
 
@@ -93,11 +101,6 @@ Visualization of the learned network (confusion matrix)
 The model's learning history:
 
 ![history](https://gcdnb.pbrd.co/images/Ee8q1CdoEGiI.png?o=1)
-
-
-
-## Project status
-Project is: _in progress_
 
 
 ## Contact

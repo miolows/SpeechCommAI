@@ -65,8 +65,8 @@ def live(collection='all'):
 def print_menu():
     print("""
           Menu
-          D - Download the raw dataset
-          P - Pre-process the dataset
+          D - Download the dataset
+          P - Pre-processing of the dataset
           T - Train the model
           L - Live record
           """)     
