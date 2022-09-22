@@ -1,5 +1,5 @@
 import tomli
-import os
+import os, sys
 from speechcommai.ai.cnn import CNN
 from speechcommai.audio.live import live_record
 from speechcommai.data.preprocessing import prep_dataset
@@ -19,7 +19,7 @@ def download_speech_data():
     dataset = dirs['dataset']
     download(dataset)
 
-def preprocessing(**kwargs):
+def preprocessing():
     dirs, audio = get_from_config('directories', 'audio')
     
     raw = dirs['dataset']
@@ -32,7 +32,7 @@ def preprocessing(**kwargs):
     
     prep_dataset(prep, raw, 
                  sample_rate, duration, n_mfcc, hop_l,
-                 **kwargs)
+                 training=80, validation=20)
 
 def init_ai(collection='all'):
     dirs, audio, data = get_from_config('directories', 'audio', 'data')
@@ -46,7 +46,8 @@ def init_ai(collection='all'):
     
     return CNN(model_path, class_names, input_shape)
 
-def train_ai(ai, collection='all'):
+def train_ai(collection='all'):
+    ai = init_ai(collection)
     dirs, data = get_from_config('directories', 'data')
     prep_data_dir = dirs['preprocessed_data']
     class_names = data[collection]
@@ -56,14 +57,32 @@ def train_ai(ai, collection='all'):
 
     ai.train_model(train_data, valid_data)
 
-def live(ai):
+def live(collection='all'):
+    ai = init_ai(collection)
     ai.load_model()
     live_record(ai)
     
+def print_menu():
+    print("""
+          Menu
+          D - Download the raw dataset
+          P - Pre-process the dataset
+          T - Train the model
+          L - Live record
+          """)     
+    
+    
     
 if __name__ == '__main__':
-    # download_speech_data()
-    # preprocessing(training=80, validation=20)
-    speech_comm_ai = init_ai()
-    # train_ai(speech_comm_ai)
-    live(speech_comm_ai)
+    menu = {'D': download_speech_data,
+            'P': preprocessing,
+            'T': train_ai,
+            'L': live,
+            'default': print_menu}
+    
+    try:
+        command = sys.argv[1]
+    except IndexError:
+        command = ""
+        
+    menu.get(command, menu.get('default'))(*sys.argv[2:])
